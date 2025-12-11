@@ -1,16 +1,16 @@
-// Firebase configuration and services
-export { default as app, auth, db, storage } from './config';
+// Database configuration
+export { db, initDatabase } from './config';
 
 // Database services
 export {
-    DatabaseService, default as DatabaseServiceClass, dbUtils
+    DatabaseService, default as DatabaseServiceClass
 } from './database';
 
 // Authentication service
 export {
     AuthService,
     authService,
-    useAuthState
+    type User
 } from './auth';
 
 // Application services
@@ -27,33 +27,8 @@ export {
 // Common types
 export * from './types';
 
-// Firebase SDK exports for advanced usage
-export {
-    addDoc,
-    // Firestore
-    collection, deleteDoc, doc,
-    getDoc,
-    getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, startAfter, updateDoc, where, type DocumentData,
-    type QueryDocumentSnapshot,
-    type Unsubscribe
-} from 'firebase/firestore';
-
-export {
-    createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword,
-    signOut, updatePassword, updateProfile,
-    // Auth
-    type User
-} from 'firebase/auth';
-
-export {
-    deleteObject, getDownloadURL, listAll,
-    // Storage
-    ref,
-    uploadBytes
-} from 'firebase/storage';
-
 // Utility functions
-export const firebaseUtils = {
+export const dbUtils = {
   // Convert timestamp to Date
   timestampToDate: (timestamp: any): Date => {
     return timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);

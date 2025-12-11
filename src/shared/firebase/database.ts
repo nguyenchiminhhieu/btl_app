@@ -1,103 +1,78 @@
-import {
-    addDoc,
-    collection,
-    deleteDoc,
-    doc,
-    DocumentData,
-    getDoc,
-    getDocs,
-    limit,
-    onSnapshot,
-    orderBy,
-    query,
-    QueryDocumentSnapshot,
-    serverTimestamp,
-    startAfter,
-    Timestamp,
-    Unsubscribe,
-    updateDoc,
-    where
-} from 'firebase/firestore';
 import { db } from './config';
 
-// Base database service class
+// Base database service class for SQLite
 export class DatabaseService {
-  private collectionName: string;
+  protected tableName: string;
 
-  constructor(collectionName: string) {
-    this.collectionName = collectionName;
+  constructor(tableName: string) {
+    this.tableName = tableName;
   }
 
-  // Get collection reference
-  getCollectionRef() {
-    return collection(db, this.collectionName);
-  }
-
-  // Get document reference
-  getDocRef(id: string) {
-    return doc(db, this.collectionName, id);
-  }
-
-  // Create a new document
+  // Create a new record
   async create(data: any): Promise<string> {
     try {
-      const docRef = await addDoc(this.getCollectionRef(), {
-        ...data,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      return docRef.id;
+      const fields = Object.keys(data);
+      const values = Object.values(data) as (string | number | null)[];
+      const placeholders = fields.map(() => '?').join(', ');
+
+      const result = db.runSync(
+        `INSERT INTO ${this.tableName} (${fields.join(', ')}, created_at, updated_at) 
+         VALUES (${placeholders}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        values
+      );
+
+      return result.lastInsertRowId.toString();
     } catch (error) {
       console.error('Error creating document:', error);
       throw error;
     }
   }
 
-  // Get a single document by ID
-  async getById(id: string): Promise<DocumentData | null> {
+  // Get a single record by ID
+  async getById(id: string): Promise<any | null> {
     try {
-      const docSnap = await getDoc(this.getDocRef(id));
-      if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
-      }
-      return null;
+      const result = db.getFirstSync<any>(
+        `SELECT * FROM ${this.tableName} WHERE id = ?`,
+        [parseInt(id)]
+      );
+      return result || null;
     } catch (error) {
       console.error('Error getting document:', error);
       throw error;
     }
   }
 
-  // Get all documents
-  async getAll(): Promise<DocumentData[]> {
+  // Get all records
+  async getAll(): Promise<any[]> {
     try {
-      const querySnapshot = await getDocs(this.getCollectionRef());
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      return db.getAllSync<any>(`SELECT * FROM ${this.tableName}`);
     } catch (error) {
       console.error('Error getting documents:', error);
       throw error;
     }
   }
 
-  // Update a document
+  // Update a record
   async update(id: string, data: any): Promise<void> {
     try {
-      await updateDoc(this.getDocRef(id), {
-        ...data,
-        updatedAt: serverTimestamp()
-      });
+      const fields = Object.keys(data);
+      const values = Object.values(data) as (string | number | null)[];
+      const setClause = fields.map(field => `${field} = ?`).join(', ');
+
+      db.runSync(
+        `UPDATE ${this.tableName} SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [...values, parseInt(id)]
+      );
     } catch (error) {
       console.error('Error updating document:', error);
       throw error;
     }
   }
 
-  // Delete a document
+  // Delete a record
   async delete(id: string): Promise<void> {
     try {
-      await deleteDoc(this.getDocRef(id));
+      db.runSync(`DELETE FROM ${this.tableName} WHERE id = ?`, [parseInt(id)]);
     } catch (error) {
       console.error('Error deleting document:', error);
       throw error;
@@ -110,104 +85,65 @@ export class DatabaseService {
     orderByField?: string,
     orderDirection: 'asc' | 'desc' = 'desc',
     limitCount?: number
-  ): Promise<DocumentData[]> {
+  ): Promise<any[]> {
     try {
-      let q = query(this.getCollectionRef());
+      let query = `SELECT * FROM ${this.tableName}`;
+      const values: any[] = [];
 
-      // Add where conditions
-      conditions.forEach(condition => {
-        q = query(q, where(condition.field, condition.operator, condition.value));
-      });
+      if (conditions.length > 0) {
+        const whereClauses = conditions.map(condition => {
+          values.push(condition.value);
+          const operator = condition.operator === '==' ? '=' : condition.operator;
+          return `${condition.field} ${operator} ?`;
+        });
+        query += ` WHERE ${whereClauses.join(' AND ')}`;
+      }
 
-      // Add ordering
       if (orderByField) {
-        q = query(q, orderBy(orderByField, orderDirection));
+        query += ` ORDER BY ${orderByField} ${orderDirection.toUpperCase()}`;
       }
 
-      // Add limit
       if (limitCount) {
-        q = query(q, limit(limitCount));
+        query += ` LIMIT ${limitCount}`;
       }
 
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      return db.getAllSync<any>(query, values);
     } catch (error) {
       console.error('Error querying documents:', error);
       throw error;
     }
   }
 
-  // Listen to real-time updates
-  onSnapshot(
-    callback: (data: DocumentData[]) => void,
-    errorCallback?: (error: Error) => void
-  ): Unsubscribe {
-    return onSnapshot(
-      this.getCollectionRef(),
-      (snapshot) => {
-        const data = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        callback(data);
-      },
-      errorCallback
-    );
+  // Listen to collection changes (simplified - no real-time in SQLite)
+  onSnapshot(callback: (data: any[]) => void): () => void {
+    // SQLite doesn't support real-time listeners
+    // Return initial data and a no-op unsubscribe function
+    this.getAll().then(callback);
+    return () => {};
   }
 
-  // Listen to single document changes
-  onDocumentSnapshot(
-    id: string,
-    callback: (data: DocumentData | null) => void,
-    errorCallback?: (error: Error) => void
-  ): Unsubscribe {
-    return onSnapshot(
-      this.getDocRef(id),
-      (doc) => {
-        if (doc.exists()) {
-          callback({ id: doc.id, ...doc.data() });
-        } else {
-          callback(null);
-        }
-      },
-      errorCallback
-    );
+  // Count records
+  async count(conditions?: Array<{ field: string; operator: string; value: any }>): Promise<number> {
+    try {
+      let query = `SELECT COUNT(*) as count FROM ${this.tableName}`;
+      const values: any[] = [];
+
+      if (conditions && conditions.length > 0) {
+        const whereClauses = conditions.map(condition => {
+          values.push(condition.value);
+          const operator = condition.operator === '==' ? '=' : condition.operator;
+          return `${condition.field} ${operator} ?`;
+        });
+        query += ` WHERE ${whereClauses.join(' AND ')}`;
+      }
+
+      const result = db.getFirstSync<{ count: number }>(query, values);
+      return result?.count || 0;
+    } catch (error) {
+      console.error('Error counting documents:', error);
+      throw error;
+    }
   }
 }
-
-// Utility functions for common operations
-export const dbUtils = {
-  // Convert Firestore timestamp to Date
-  timestampToDate: (timestamp: Timestamp): Date => {
-    return timestamp.toDate();
-  },
-
-  // Get server timestamp
-  getServerTimestamp: () => serverTimestamp(),
-
-  // Create a paginated query
-  createPaginatedQuery: (
-    collectionName: string,
-    pageSize: number,
-    lastDoc?: QueryDocumentSnapshot<DocumentData>,
-    orderByField: string = 'createdAt',
-    orderDirection: 'asc' | 'desc' = 'desc'
-  ) => {
-    let q = query(
-      collection(db, collectionName),
-      orderBy(orderByField, orderDirection),
-      limit(pageSize)
-    );
-
-    if (lastDoc) {
-      q = query(q, startAfter(lastDoc));
-    }
-
-    return q;
-  }
-};
 
 export default DatabaseService;
