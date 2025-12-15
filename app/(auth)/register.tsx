@@ -1,4 +1,6 @@
-import { useAuth } from '@/src/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -14,7 +16,8 @@ import {
 } from 'react-native';
 
 export default function RegisterScreen() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,8 +26,15 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     console.log('Register button pressed'); // Debug log
     
-    if (!username.trim() || !password.trim() || !confirmPassword.trim()) {
+    if (!email.trim() || !displayName.trim() || !password.trim() || !confirmPassword.trim()) {
       Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    // Kiểm tra email hợp lệ
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      Alert.alert('Lỗi', 'Email không hợp lệ');
       return;
     }
 
@@ -38,30 +48,23 @@ export default function RegisterScreen() {
       return;
     }
 
-    if (username.length < 3) {
-      Alert.alert('Lỗi', 'Tên đăng nhập phải có ít nhất 3 ký tự');
+    if (displayName.length < 2) {
+      Alert.alert('Lỗi', 'Tên hiển thị phải có ít nhất 2 ký tự');
       return;
     }
 
     setLoading(true);
-    console.log('Starting registration for:', username); // Debug log
+    console.log('Starting registration for:', email); // Debug log
     
     try {
       console.log('Using AuthContext signUp method'); // Debug log
       
-      await signUp(username.trim(), password);
+      await signUp(email.trim(), password, displayName.trim());
       
-      console.log('Registration successful'); // Debug log
-      Alert.alert(
-        'Đăng ký thành công', 
-        'Tài khoản đã được tạo thành công!',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/(tabs)')
-          }
-        ]
-      );
+      console.log('Registration successful, navigating to tabs...'); // Debug log
+      
+      // Navigate to tabs after successful registration
+      router.replace('/(tabs)');
     } catch (error: any) {
       console.error('Registration error:', error); // Debug log
       let errorMessage = 'Đăng ký thất bại';
@@ -98,158 +101,325 @@ export default function RegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <LinearGradient
+      colors={['#202254', '#2D3A7F']}
+      style={styles.gradient}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>Đăng ký</Text>
-          <Text style={styles.subtitle}>Tạo tài khoản mới</Text>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Tên đăng nhập</Text>
-            <TextInput
-              style={styles.input}
-              value={username}
-              onChangeText={setUsername}
-              placeholder="Nhập tên đăng nhập"
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!loading}
-            />
+      <KeyboardAvoidingView 
+        style={styles.container} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header with Icon */}
+          <View style={styles.headerContainer}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="chatbubbles" size={50} color="#fff" />
+            </View>
+            <Text style={styles.appTitle}>Join Lingua Talk</Text>
+            <Text style={styles.appSubtitle}>Talk. Be Heard</Text>
           </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Mật khẩu</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Nhập mật khẩu"
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!loading}
-            />
-          </View>
+          {/* Form Container */}
+          <View style={styles.formContainer}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Start your speaking journey today</Text>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Xác nhận mật khẩu</Text>
-            <TextInput
-              style={styles.input}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder="Nhập lại mật khẩu"
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!loading}
-            />
-          </View>
+            {/* Email Input with Icon */}
+            <View style={styles.inputContainer}>
+              <View style={styles.inputWrapper}>
+                <Ionicons name="mail-outline" size={20} color="#f5576c" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Your email address"
+                  placeholderTextColor="#999"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!loading}
+                />
+              </View>
+            </View>
 
-          <TouchableOpacity 
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleRegister}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? 'Đang đăng ký...' : 'Đăng ký'}
-            </Text>
-          </TouchableOpacity>
+            {/* Display Name Input with Icon */}
+            <View style={styles.inputContainer}>
+              <View style={styles.inputWrapper}>
+                <Ionicons name="person-outline" size={20} color="#f5576c" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  placeholder="Your name"
+                  placeholderTextColor="#999"
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  editable={!loading}
+                />
+              </View>
+            </View>
 
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Đã có tài khoản? </Text>
-            <TouchableOpacity onPress={goToLogin} disabled={loading}>
-              <Text style={styles.loginLink}>Đăng nhập</Text>
+            {/* Password Input with Icon */}
+            <View style={styles.inputContainer}>
+              <View style={styles.inputWrapper}>
+                <Ionicons name="key-outline" size={20} color="#f5576c" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Create a password (min 6 characters)"
+                  placeholderTextColor="#999"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!loading}
+                />
+              </View>
+            </View>
+
+            {/* Confirm Password Input with Icon */}
+            <View style={styles.inputContainer}>
+              <View style={styles.inputWrapper}>
+                <Ionicons name="shield-checkmark-outline" size={20} color="#f5576c" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Confirm your password"
+                  placeholderTextColor="#999"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!loading}
+                />
+              </View>
+            </View>
+
+            {/* Register Button with Gradient */}
+            <TouchableOpacity 
+              onPress={handleRegister}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={loading ? ['#ccc', '#999'] : ['#F97316', '#FBBF24']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.button}
+              >
+                {loading ? (
+                  <Ionicons name="hourglass-outline" size={24} color="#fff" />
+                ) : (
+                  <Ionicons name="checkmark-circle-outline" size={24} color="#fff" />
+                )}
+                <Text style={styles.buttonText}>
+                  {loading ? 'Creating account...' : 'Sign Up'}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Login Link */}
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>Already have an account? </Text>
+              <TouchableOpacity onPress={goToLogin} disabled={loading}>
+                <Text style={styles.loginLink}>Sign In</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+          {/* Footer Benefits */}
+          <View style={styles.benefitsContainer}>
+            <Text style={styles.benefitsTitle}>What you'll get:</Text>
+            <View style={styles.benefitItem}>
+              <Ionicons name="checkmark-circle" size={20} color="#fff" />
+              <Text style={styles.benefitText}>Personalized learning path</Text>
+            </View>
+            <View style={styles.benefitItem}>
+              <Ionicons name="checkmark-circle" size={20} color="#fff" />
+              <Text style={styles.benefitText}>Interactive exercises & games</Text>
+            </View>
+            <View style={styles.benefitItem}>
+              <Ionicons name="checkmark-circle" size={20} color="#fff" />
+              <Text style={styles.benefitText}>Progress tracking & certificates</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   scrollContainer: {
     flexGrow: 1,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  iconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
-    padding: 20,
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  appSubtitle: {
+    fontSize: 16,
+    color: '#fff',
+    opacity: 0.9,
+    textAlign: 'center',
   },
   formContainer: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 24,
+    borderRadius: 24,
+    padding: 28,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 8,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
-    color: '#1a1a1a',
+    color: '#2d3748',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
     marginBottom: 32,
-    color: '#666',
+    color: '#718096',
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#333',
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    backgroundColor: '#f7fafc',
+    paddingHorizontal: 16,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    flex: 1,
     padding: 16,
     fontSize: 16,
-    backgroundColor: '#f8f9fa',
+    color: '#2d3748',
   },
   button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
+    flexDirection: 'row',
+    borderRadius: 12,
     padding: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 8,
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
+    shadowColor: '#f5576c',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   buttonText: {
     color: 'white',
     fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e2e8f0',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: '#a0aec0',
     fontWeight: '600',
+    fontSize: 14,
   },
   loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    alignItems: 'center',
   },
   loginText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 15,
+    color: '#718096',
   },
   loginLink: {
+    fontSize: 15,
+    color: '#f5576c',
+    fontWeight: 'bold',
+  },
+  benefitsContainer: {
+    marginTop: 40,
+    paddingHorizontal: 20,
+  },
+  benefitsTitle: {
     fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  benefitText: {
+    fontSize: 14,
+    color: '#fff',
+    marginLeft: 12,
+    flex: 1,
   },
 });

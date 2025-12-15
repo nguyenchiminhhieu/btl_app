@@ -1,0 +1,429 @@
+{
+  "categories": [
+    {
+      "name": "People",
+      "description": "Describe a person...",
+      "topics": [
+        {
+          "title": "Describe a person who has influenced you",
+          "main_prompt": "Describe a person who has had an important influence on your life",
+          "bullet_points": [
+            "who this person is and how you know them",
+            "what kind of person they are",
+            "what this person has done that has influenced you"
+          ],
+          "follow_up_question": "and explain why you think this person has been such an important influence on you",
+          "difficulty": "intermediate"
+        },
+        {
+          "title": "Describe a family member you are close to",
+          "main_prompt": "Describe a member of your family you get on well with",
+          "bullet_points": [
+            "who this person is",
+            "what relationship you have to that person",
+            "what that person is like",
+            "what you do together"
+          ],
+          "follow_up_question": "and explain why you get on so well",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe someone you respect",
+          "main_prompt": "Describe someone you respect",
+          "bullet_points": [
+            "who the person is",
+            "how you know about this person",
+            "what this person does",
+            "what this person is like"
+          ],
+          "follow_up_question": "and explain why you respect this person",
+          "difficulty": "intermediate"
+        },
+        {
+          "title": "Describe a person who is kind",
+          "main_prompt": "Describe a person you know who is kind",
+          "bullet_points": [
+            "who this person is",
+            "how you know this person",
+            "what sort of person he/she is"
+          ],
+          "follow_up_question": "and explain why you think they are kind",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe an older person you admire",
+          "main_prompt": "Describe a person much older than you who you admire",
+          "bullet_points": [
+            "who this person is",
+            "how old he/she is",
+            "what this person is like",
+            "how you know this person"
+          ],
+          "follow_up_question": "and explain why you admire this person",
+          "difficulty": "intermediate"
+        },
+        {
+          "title": "Describe a famous person from your country",
+          "main_prompt": "Describe a famous person from your country",
+          "bullet_points": [
+            "who this person is",
+            "what this person is famous for",
+            "how people in your country feel towards him/her"
+          ],
+          "follow_up_question": "and explain how you feel towards this person",
+          "difficulty": "advanced"
+        },
+        {
+          "title": "Describe a close friend from your childhood",
+          "main_prompt": "Describe a close friend from your childhood",
+          "bullet_points": [
+            "where you met this person",
+            "why you liked him/her",
+            "what you used to do together"
+          ],
+          "follow_up_question": "and explain whether you still have contact with them and why",
+          "difficulty": "intermediate"
+        }
+      ]
+    },
+    {
+      "name": "Places",
+      "description": "Describe a place...",
+      "topics": [
+        {
+          "title": "Describe a peaceful place you know",
+          "main_prompt": "Describe a place that you find peaceful",
+          "bullet_points": [
+            "where it is",
+            "when you first went there",
+            "what you do there"
+          ],
+          "follow_up_question": "and explain why you find it peaceful",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe a place you have recently visited",
+          "main_prompt": "Describe a place you have recently visited",
+          "bullet_points": [
+            "where you went",
+            "who you went with",
+            "how you got there"
+          ],
+          "follow_up_question": "and explain why you enjoyed it",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe your favourite shop",
+          "main_prompt": "Describe your favourite shop",
+          "bullet_points": [
+            "where it is",
+            "how often you go there",
+            "what it sells"
+          ],
+          "follow_up_question": "and explain why you think it is a good shop",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe a place near water",
+          "main_prompt": "Describe a place near water that you like",
+          "bullet_points": [
+            "where it is",
+            "how you get there",
+            "how often you go there",
+            "what you can do there"
+          ],
+          "follow_up_question": "and explain why you like this place",
+          "difficulty": "intermediate"
+        },
+        {
+          "title": "Describe a museum you visited",
+          "main_prompt": "Describe a museum that you visited",
+          "bullet_points": [
+            "where the museum is",
+            "what's in the museum",
+            "who you went with"
+          ],
+          "follow_up_question": "and explain your overall experience",
+          "difficulty": "intermediate"
+        },
+        {
+          "title": "Describe an important building in your country",
+          "main_prompt": "Describe an important building in your country",
+          "bullet_points": [
+            "what the building looks like",
+            "what the building is used for",
+            "when it was built"
+          ],
+          "follow_up_question": "and explain why it's important and whether you would like to visit it",
+          "difficulty": "advanced"
+        },
+        {
+          "title": "Describe your neighbourhood",
+          "main_prompt": "Describe your neighbourhood",
+          "bullet_points": [
+            "what it looks like",
+            "what you can find there",
+            "what you like to do there"
+          ],
+          "follow_up_question": "and explain how you feel about your neighbourhood",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe a place with animals",
+          "main_prompt": "Describe a place with animals you visited",
+          "bullet_points": [
+            "where it is",
+            "how you heard of it",
+            "what animals can be seen there"
+          ],
+          "follow_up_question": "and explain why it might be an interesting place to visit",
+          "difficulty": "intermediate"
+        }
+      ]
+    },
+    {
+      "name": "Objects",
+      "description": "Describe an object or thing...",
+      "topics": [
+        {
+          "title": "Describe a gift you recently gave",
+          "main_prompt": "Describe a gift you recently gave to someone",
+          "bullet_points": [
+            "who you gave it to",
+            "what kind of person he/she is",
+            "what the gift was",
+            "what occasion the gift was for"
+          ],
+          "follow_up_question": "and explain why you chose that gift",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe a book you have recently read",
+          "main_prompt": "Describe a book you have recently read",
+          "bullet_points": [
+            "what kind of book it is",
+            "what it is about",
+            "what sort of people would enjoy it"
+          ],
+          "follow_up_question": "and explain why you liked it",
+          "difficulty": "intermediate"
+        },
+        {
+          "title": "Describe a piece of art you like",
+          "main_prompt": "Describe a piece of art you like",
+          "bullet_points": [
+            "what the work of art is",
+            "when you first saw it",
+            "what you know about it"
+          ],
+          "follow_up_question": "and explain why you like it",
+          "difficulty": "advanced"
+        },
+        {
+          "title": "Describe a useful website",
+          "main_prompt": "Describe a useful website you know",
+          "bullet_points": [
+            "what it is",
+            "how often you visit it",
+            "what kind of site it is",
+            "what kind of information it offers"
+          ],
+          "follow_up_question": "and explain why you think it is useful",
+          "difficulty": "intermediate"
+        },
+        {
+          "title": "Describe a photograph you like",
+          "main_prompt": "Describe a photograph you like",
+          "bullet_points": [
+            "what can be seen in the photo",
+            "when it was taken",
+            "who took it"
+          ],
+          "follow_up_question": "and explain why you like it",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe a song you like",
+          "main_prompt": "Describe a song you like",
+          "bullet_points": [
+            "what kind of song it is",
+            "what the song is about",
+            "when you first heard it"
+          ],
+          "follow_up_question": "and explain why you like it",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe an important possession",
+          "main_prompt": "Describe a possession that is important to you",
+          "bullet_points": [
+            "where you got it from",
+            "what you do with it",
+            "why it's important to you"
+          ],
+          "follow_up_question": "and explain how you would feel if you were to lose it",
+          "difficulty": "intermediate"
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "description": "Describe an event, occasion or celebration...",
+      "topics": [
+        {
+          "title": "Describe a recent event you attended",
+          "main_prompt": "Describe an event that you attended recently",
+          "bullet_points": [
+            "what and where the occasion was",
+            "who was there",
+            "what happened"
+          ],
+          "follow_up_question": "and explain how you enjoyed it",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe a party you attended",
+          "main_prompt": "Describe a party that you attended recently",
+          "bullet_points": [
+            "what and where the occasion was",
+            "who was there",
+            "what happened"
+          ],
+          "follow_up_question": "and describe how you enjoyed it",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe a festival in your country",
+          "main_prompt": "Describe a festival that is celebrated in your country",
+          "bullet_points": [
+            "when you celebrate it",
+            "why it is celebrated",
+            "how people in your country celebrate it"
+          ],
+          "follow_up_question": "and explain how you feel during this festival",
+          "difficulty": "intermediate"
+        },
+        {
+          "title": "Describe an unexpected event",
+          "main_prompt": "Describe an unexpected event that happened to you",
+          "bullet_points": [
+            "what it was",
+            "when it happened",
+            "who was there",
+            "why it was unexpected"
+          ],
+          "follow_up_question": "and explain why you enjoyed it or how you felt about it",
+          "difficulty": "advanced"
+        },
+        {
+          "title": "Describe a time you were embarrassed",
+          "main_prompt": "Describe a time you were embarrassed",
+          "bullet_points": [
+            "when it was",
+            "who you were with",
+            "what happened"
+          ],
+          "follow_up_question": "and explain how you coped afterwards",
+          "difficulty": "advanced"
+        },
+        {
+          "title": "Describe a journey that didn't go as planned",
+          "main_prompt": "Describe a journey that didn't go as planned",
+          "bullet_points": [
+            "where you were going",
+            "how you were travelling",
+            "who you were with",
+            "what went wrong"
+          ],
+          "follow_up_question": "and explain what you would do differently",
+          "difficulty": "intermediate"
+        },
+        {
+          "title": "Describe a memorable trip",
+          "main_prompt": "Describe a trip you went on that you enjoyed",
+          "bullet_points": [
+            "where you went",
+            "where you stayed",
+            "who you went with",
+            "what you did there"
+          ],
+          "follow_up_question": "and explain why you enjoyed it",
+          "difficulty": "beginner"
+        }
+      ]
+    },
+    {
+      "name": "Experiences",
+      "description": "Describe an experience or activity...",
+      "topics": [
+        {
+          "title": "Describe a hobby you enjoy",
+          "main_prompt": "Describe an interesting hobby you have",
+          "bullet_points": [
+            "what it is",
+            "what kind of people do it",
+            "how it is done"
+          ],
+          "follow_up_question": "and explain why you think it is interesting",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe something you do to relax",
+          "main_prompt": "Describe something you do to relax",
+          "bullet_points": [
+            "what it is",
+            "where you do it",
+            "when you first did it"
+          ],
+          "follow_up_question": "and explain why you find it relaxing",
+          "difficulty": "beginner"
+        },
+        {
+          "title": "Describe an exercise you know",
+          "main_prompt": "Describe an exercise you know",
+          "bullet_points": [
+            "what it is",
+            "how it is done",
+            "when you first tried it",
+            "what kind of people it is suitable for"
+          ],
+          "follow_up_question": "and explain why you think it is a good exercise",
+          "difficulty": "intermediate"
+        },
+        {
+          "title": "Describe a sport you would like to learn",
+          "main_prompt": "Describe a sport you would like to learn",
+          "bullet_points": [
+            "what it is",
+            "what equipment is needed for it",
+            "how you would learn it"
+          ],
+          "follow_up_question": "and explain why you would like to learn this sport",
+          "difficulty": "intermediate"
+        },
+        {
+          "title": "Describe something difficult you learned",
+          "main_prompt": "Describe something difficult you learned to do",
+          "bullet_points": [
+            "what you learned to do",
+            "how you learned to do it",
+            "why it was difficult"
+          ],
+          "follow_up_question": "and explain whether you're glad you learned to do this or not",
+          "difficulty": "advanced"
+        },
+        {
+          "title": "Describe an important decision you made",
+          "main_prompt": "Describe a decision that you made that was important to your life",
+          "bullet_points": [
+            "what the decision was",
+            "who you were with when you made it",
+            "the consequences of your decision"
+          ],
+          "follow_up_question": "and explain how you felt after you had made it",
+          "difficulty": "advanced"
+        }
+      ]
+    }
+  ]
+}
