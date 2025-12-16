@@ -4,11 +4,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 export default function SpeakingIndexScreen() {
@@ -119,8 +119,12 @@ export default function SpeakingIndexScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Part 3 Card - Coming Soon */}
-        <View style={[styles.card, styles.cardDisabled]}>
+        {/* Part 3 Card */}
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => router.push('/(tabs)/speaking/part3' as any)}
+          activeOpacity={0.9}
+        >
           <LinearGradient
             colors={[Colors.accent.info, '#06B6D4']}
             style={styles.cardGradient}
@@ -133,13 +137,13 @@ export default function SpeakingIndexScreen() {
             <View style={styles.cardContent}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardNumber}>Part 3</Text>
-                <View style={[styles.cardBadgeContainer, { backgroundColor: 'rgba(255, 255, 255, 0.3)' }]}>
-                  <Text style={styles.cardBadge}>Sắp ra mắt</Text>
+                <View style={styles.cardBadgeContainer}>
+                  <Text style={styles.cardBadge}>Live Discussion</Text>
                 </View>
               </View>
               <Text style={styles.cardTitle}>Two-way Discussion</Text>
               <Text style={styles.cardDescription}>
-                Thảo luận sâu hơn về chủ đề với các câu hỏi trừu tượng
+                Thảo luận sâu hơn về chủ đề với các câu hỏi trừu tượng và phản hồi real-time từ AI
               </Text>
               <View style={styles.cardFooter}>
                 <View style={styles.cardInfoItem}>
@@ -147,16 +151,16 @@ export default function SpeakingIndexScreen() {
                   <Text style={styles.cardInfo}>4-5 phút</Text>
                 </View>
                 <View style={styles.cardInfoItem}>
-                  <Ionicons name="bulb" size={16} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.cardInfo}>Sâu sắc</Text>
+                  <Ionicons name="sparkles" size={16} color="rgba(255,255,255,0.9)" />
+                  <Text style={styles.cardInfo}>AI Powered</Text>
                 </View>
               </View>
             </View>
             <View style={styles.cardArrow}>
-              <Ionicons name="lock-closed" size={24} color="rgba(255,255,255,0.5)" />
+              <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.7)" />
             </View>
           </LinearGradient>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Info Section */}

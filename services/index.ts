@@ -27,13 +27,26 @@ export {
 // Common types
 export * from './types';
 
+// Dictionary Service
+export {
+  DictionaryService, dictionaryService
+} from './dictionary-service';
+export * from './dictionary-types';
+
 // IELTS Speaking Part 1 (Python Backend)
 export * from './part1-service';
-export * from './part1-types';
+export {
+  type AssessmentResult as Part1AssessmentResult,
+  type ContentResult as Part1ContentResult
+} from './part1-types';
 
 // IELTS Speaking Part 2 (Python Backend)
 export * from './part2-service';
 export * from './part2-types';
+
+// IELTS Speaking Part 3 (Gemini Live API)
+export * from './part3-service';
+export * from './part3-types';
 
 // Utility functions
 export const dbUtils = {
