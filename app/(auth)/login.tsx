@@ -1,62 +1,101 @@
+import {
+    Button,
+    TextInput
+} from '@/components/design-system';
+import {
+    Container,
+    Divider,
+    HStack,
+    Spacer,
+    VStack
+} from '@/components/design-system/Layout';
+import {
+    Body,
+    Caption,
+    Heading2,
+    Heading3
+} from '@/components/design-system/Typography';
+import { DesignTokens } from '@/constants/design-tokens';
 import { useAuth } from '@/contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableOpacity
 } from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  
   const { signIn, signUp } = useAuth();
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ email và mật khẩu');
-      return;
+  const validateForm = () => {
+    let isValid = true;
+    
+    // Reset errors
+    setEmailError('');
+    setPasswordError('');
+    
+    // Validate email
+    if (!email.trim()) {
+      setEmailError('Email is required');
+      isValid = false;
+    } else if (!email.includes('@')) {
+      setEmailError('Please enter a valid email');
+      isValid = false;
     }
+    
+    // Validate password
+    if (!password.trim()) {
+      setPasswordError('Password is required');
+      isValid = false;
+    } else if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      isValid = false;
+    }
+    
+    return isValid;
+  };
+
+  const handleLogin = async () => {
+    if (!validateForm()) return;
 
     setLoading(true);
     try {
-      console.log('Using AuthContext signIn method'); // Debug log
+      console.log('Using AuthContext signIn method');
       await signIn(email.trim(), password);
       
-      // Navigate to tabs after successful login
       console.log('Login successful, navigating to tabs...');
       router.replace('/(tabs)');
     } catch (error: any) {
       console.error('Error signing in:', error);
       
-      // Nếu là demo user và chưa tồn tại, tự động tạo
       if (email.toLowerCase() === 'demo@example.com' && error.message?.includes('Invalid login credentials')) {
         Alert.alert(
-          'Tạo Demo User?',
-          'Demo user chưa tồn tại. Bạn có muốn tạo tự động không?',
+          'Create Demo User?',
+          'Demo user does not exist. Would you like to create it automatically?',
           [
             {
-              text: 'Hủy',
+              text: 'Cancel',
               style: 'cancel'
             },
             {
-              text: 'Tạo & Đăng nhập',
+              text: 'Create & Login',
               onPress: async () => {
                 try {
                   setLoading(true);
                   await signUp('demo@example.com', 'demo123', 'Demo User');
-                  Alert.alert('Thành công', 'Demo user đã được tạo và đăng nhập!');
+                  Alert.alert('Success', 'Demo user created and logged in!');
                 } catch (signUpError: any) {
-                  Alert.alert('Lỗi', 'Không thể tạo demo user: ' + signUpError.message);
+                  Alert.alert('Error', 'Could not create demo user: ' + signUpError.message);
                 } finally {
                   setLoading(false);
                 }
@@ -65,7 +104,7 @@ export default function LoginScreen() {
           ]
         );
       } else {
-        Alert.alert('Đăng nhập thất bại', error.message);
+        Alert.alert('Login Failed', error.message);
       }
     } finally {
       setLoading(false);
@@ -84,319 +123,167 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={['#202254', '#2D3A7F']}
-      style={styles.gradient}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
+    <KeyboardAvoidingView 
+      style={{ flex: 1, backgroundColor: DesignTokens.colors.neutral[50] }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <KeyboardAvoidingView 
-        style={styles.container} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header with Logo */}
-          <View style={styles.headerContainer}>
-            <View style={styles.logoContainer}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="chatbubbles" size={50} color="#fff" />
-              </View>
-            </View>
-            <Text style={styles.appTitle}>Lingua Talk</Text>
-            <Text style={styles.appSubtitle}>Talk. Be Heard</Text>
-          </View>
-
-          {/* Form Container */}
-          <View style={styles.formContainer}>
-            <Text style={styles.title}>Welcome Back!</Text>
-            <Text style={styles.subtitle}>Continue your speaking journey</Text>
-
-            {/* Email Input with Icon */}
-            <View style={styles.inputContainer}>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="mail-outline" size={20} color="#667eea" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Email"
-                  placeholderTextColor="#999"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                />
-              </View>
-            </View>
-
-            {/* Password Input with Icon */}
-            <View style={styles.inputContainer}>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="lock-closed-outline" size={20} color="#667eea" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Password"
-                  placeholderTextColor="#999"
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                />
-              </View>
-            </View>
-
-            {/* Login Button with Gradient */}
-            <TouchableOpacity 
-              onPress={handleLogin}
-              disabled={loading}
-              activeOpacity={0.8}
+      <Container scrollable>
+        <VStack gap="2xl" align="center" style={{ paddingVertical: DesignTokens.spacing['2xl'] }}>
+          {/* Logo Section */}
+          <VStack gap="lg" align="center">
+            <VStack 
+              align="center" 
+              justify="center"
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: 40,
+                backgroundColor: DesignTokens.colors.primary[600],
+              }}
             >
-              <LinearGradient
-                colors={loading ? ['#ccc', '#999'] : ['#F97316', '#FBBF24']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.button}
-              >
-                {loading ? (
-                  <Ionicons name="hourglass-outline" size={24} color="#fff" />
-                ) : (
-                  <Ionicons name="log-in-outline" size={24} color="#fff" />
-                )}
-                <Text style={styles.buttonText}>
-                  {loading ? 'Signing in...' : 'Sign In'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
+              <Ionicons name="chatbubbles" size={40} color={DesignTokens.colors.neutral[0]} />
+            </VStack>
+            
+            <VStack gap="xs" align="center">
+              <Heading2 color={DesignTokens.colors.neutral[900]}>
+                Lingua Talk
+              </Heading2>
+              <Caption color={DesignTokens.colors.neutral[600]}>
+                Talk. Be Heard.
+              </Caption>
+            </VStack>
+          </VStack>
 
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.dividerLine} />
-            </View>
+          {/* Welcome Message */}
+          <VStack gap="xs" align="center">
+            <Heading3>Welcome Back!</Heading3>
+            <Body align="center" color={DesignTokens.colors.neutral[600]}>
+              Continue your speaking journey
+            </Body>
+          </VStack>
 
-            {/* Demo User Login */}
+          {/* Login Form */}
+          <VStack gap="md" style={{ width: '100%' }}>
+            <TextInput
+              label="Email"
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                setEmailError('');
+              }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              leftIcon="mail-outline"
+              error={emailError}
+              disabled={loading}
+            />
+            
+            <TextInput
+              label="Password"
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                setPasswordError('');
+              }}
+              secureTextEntry={!showPassword}
+              leftIcon="lock-closed-outline"
+              rightIcon={showPassword ? "eye-outline" : "eye-off-outline"}
+              onRightIconPress={() => setShowPassword(!showPassword)}
+              error={passwordError}
+              disabled={loading}
+            />
+            
             <TouchableOpacity 
+              onPress={() => {/* Handle forgot password */}}
+              style={{ alignSelf: 'flex-end' }}
+            >
+              <Caption color={DesignTokens.colors.primary[600]}>
+                Forgot Password?
+              </Caption>
+            </TouchableOpacity>
+          </VStack>
+
+          {/* Actions */}
+          <VStack gap="sm" style={{ width: '100%' }}>
+            <Button
+              variant="primary"
+              size="lg"
+              onPress={handleLogin}
+              loading={loading}
+              disabled={loading}
+              accessibilityLabel="Sign in to your account"
+            >
+              Sign In
+            </Button>
+            
+            <HStack gap="xs" align="center" justify="center">
+              <Divider style={{ flex: 1 }} />
+              <Caption color={DesignTokens.colors.neutral[400]} style={{ paddingHorizontal: DesignTokens.spacing.md }}>
+                OR
+              </Caption>
+              <Divider style={{ flex: 1 }} />
+            </HStack>
+            
+            <Button
+              variant="ghost"
+              size="lg"
               onPress={handleDemoLogin}
               disabled={loading}
-              style={styles.demoButton}
+              accessibilityLabel="Continue as demo user"
+              leftIcon="play-circle-outline"
             >
-              <Text style={styles.demoButtonText}>🎯 Demo User (demo@example.com)</Text>
+              Continue as Demo User
+            </Button>
+          </VStack>
+
+          {/* Sign Up Link */}
+          <HStack gap="xs" align="center">
+            <Caption>Don't have an account?</Caption>
+            <TouchableOpacity 
+              onPress={goToRegister} 
+              disabled={loading}
+              accessibilityLabel="Go to sign up"
+            >
+              <Caption weight="semibold" color={DesignTokens.colors.primary[600]}>
+                Sign Up
+              </Caption>
             </TouchableOpacity>
+          </HStack>
 
-            {/* Register Link */}
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={goToRegister} disabled={loading}>
-                <Text style={styles.registerLink}>Sign Up Now</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <Spacer height={DesignTokens.spacing.lg} />
 
-          {/* Footer Features */}
-          <View style={styles.featuresContainer}>
-            <View style={styles.featureItem}>
-              <Ionicons name="trophy-outline" size={24} color="#fff" />
-              <Text style={styles.featureText}>Track Progress</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="headset-outline" size={24} color="#fff" />
-              <Text style={styles.featureText}>Practice Speaking</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="star-outline" size={24} color="#fff" />
-              <Text style={styles.featureText}>Earn Rewards</Text>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </LinearGradient>
+          {/* Features */}
+          <VStack gap="md" style={{ width: '100%' }}>
+            <Caption align="center" color={DesignTokens.colors.neutral[400]}>
+              What you'll get:
+            </Caption>
+            
+            <HStack justify="space-around" style={{ width: '100%' }}>
+              <FeatureItem icon="trophy-outline" text="Track Progress" />
+              <FeatureItem icon="mic-outline" text="AI Assessment" />
+              <FeatureItem icon="star-outline" text="Earn Rewards" />
+            </HStack>
+          </VStack>
+        </VStack>
+      </Container>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-  },
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  logoContainer: {
-    marginBottom: 12,
-  },
-  iconCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 4,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  appTitle: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
-    letterSpacing: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  appSubtitle: {
-    fontSize: 17,
-    color: '#fff',
-    opacity: 0.95,
-    fontStyle: 'italic',
-  },
-  formContainer: {
-    backgroundColor: 'white',
-    borderRadius: 24,
-    padding: 28,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 10,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#2d3748',
-  },
-  subtitle: {
-    fontSize: 15,
-    textAlign: 'center',
-    marginBottom: 32,
-    color: '#718096',
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    backgroundColor: '#f7fafc',
-    paddingHorizontal: 16,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    padding: 16,
-    fontSize: 16,
-    color: '#2d3748',
-  },
-  button: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-    shadowColor: '#667eea',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e2e8f0',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: '#a0aec0',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  registerText: {
-    fontSize: 15,
-    color: '#718096',
-  },
-  registerLink: {
-    fontSize: 15,
-    color: '#667eea',
-    fontWeight: 'bold',
-  },
-  demoButton: {
-    backgroundColor: '#f0f4ff',
-    borderRadius: 8,
-    padding: 12,
-    marginVertical: 12,
-    borderWidth: 1,
-    borderColor: '#667eea',
-    borderStyle: 'dashed',
-  },
-  demoButtonText: {
-    color: '#667eea',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  featuresContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 40,
-    paddingHorizontal: 10,
-  },
-  featureItem: {
-    alignItems: 'center',
-  },
-  featureText: {
-    color: '#fff',
-    fontSize: 12,
-    marginTop: 8,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-});
+// Helper Component
+const FeatureItem: React.FC<{ icon: string; text: string }> = ({ icon, text }) => (
+  <VStack align="center" gap="xs">
+    <Ionicons 
+      name={icon as any} 
+      size={20} 
+      color={DesignTokens.colors.primary[600]} 
+    />
+    <Caption align="center" color={DesignTokens.colors.neutral[600]}>
+      {text}
+    </Caption>
+  </VStack>
+);
+
+// No styles needed - using design system components

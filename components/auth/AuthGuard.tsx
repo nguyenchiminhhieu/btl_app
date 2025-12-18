@@ -1,6 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { router } from 'expo-router';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 interface AuthGuardProps {
@@ -9,13 +8,6 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading } = useAuth();
-
-  // Chuyển hướng đến login nếu chưa đăng nhập (trong useEffect)
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/(auth)/login');
-    }
-  }, [user, loading]);
 
   // Hiển thị loading spinner khi đang kiểm tra auth state
   if (loading) {
@@ -27,12 +19,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // Không hiển thị gì nếu chưa đăng nhập
+  // Để index.tsx xử lý redirect
   if (!user) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
-    );
+    return null;
   }
 
   return <>{children}</>;

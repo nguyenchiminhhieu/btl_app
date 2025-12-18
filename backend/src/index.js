@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import fs from 'fs/promises';
 import multer from 'multer';
+import { networkInterfaces } from 'os';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { assessPronunciation } from './azure-speech.js';
@@ -18,6 +19,39 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+/**
+ * Get local IP address for displaying server info
+ */
+function getLocalIP() {
+  const networks = networkInterfaces();
+  
+  // Prioritize Wi-Fi over Ethernet
+  const priorityOrder = ['Wi-Fi', 'Ethernet', 'en0', 'eth0'];
+  
+  for (const networkName of priorityOrder) {
+    const network = networks[networkName];
+    if (network) {
+      for (const details of network) {
+        if (details.family === 'IPv4' && !details.internal) {
+          return details.address;
+        }
+      }
+    }
+  }
+  
+  // Fallback
+  for (const networkName in networks) {
+    const network = networks[networkName];
+    for (const details of network) {
+      if (details.family === 'IPv4' && !details.internal) {
+        return details.address;
+      }
+    }
+  }
+  
+  return 'localhost';
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -30,15 +64,44 @@ const upload = multer({
 
 // Health check
 app.get('/', (req, res) => {
+  const localIP = getLocalIP();
   res.json({
     status: 'ok',
     message: 'IELTS Speaking Assessment Backend',
     version: '1.0.0',
+    server: {
+      ip: localIP,
+      port: PORT,
+      url: `http://${localIP}:${PORT}`
+    },
+    timestamp: new Date().toISOString()
   });
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy' });
+  const localIP = getLocalIP();
+  res.json({ 
+    status: 'healthy',
+    server: {
+      ip: localIP,
+      port: PORT,
+      url: `http://${localIP}:${PORT}`
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Server info endpoint để frontend có thể detect IP
+app.get('/server-info', (req, res) => {
+  const localIP = getLocalIP();
+  res.json({
+    ip: localIP,
+    port: PORT,
+    url: `http://${localIP}:${PORT}`,
+    platform: process.platform,
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Main assessment endpoint
@@ -259,8 +322,21 @@ app.post('/api/assess-part2-speaking', upload.single('audioFile'), async (req, r
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`✅ Health check: http://localhost:${PORT}/health`);
-  console.log(`📝 Part 1 Assessment: http://localhost:${PORT}/api/assess-speaking`);
-  console.log(`📋 Part 2 Assessment: http://localhost:${PORT}/api/assess-part2-speaking`);
+  const localIP = getLocalIP();
+  
+  console.log('\n🚀 IELTS Speaking Backend Started Successfully!');
+  console.log('=' .repeat(50));
+  console.log(`📍 Local IP: ${localIP}`);
+  console.log(`🌐 Server URL: http://${localIP}:${PORT}`);
+  console.log(`🏠 Localhost: http://localhost:${PORT}`);
+  console.log('=' .repeat(50));
+  console.log('📋 Available Endpoints:');
+  console.log(`   ✅ Health Check: http://${localIP}:${PORT}/health`);
+  console.log(`   ℹ️  Server Info: http://${localIP}:${PORT}/server-info`);
+  console.log(`   📝 Part 1 Assessment: http://${localIP}:${PORT}/api/assess-speaking`);
+  console.log(`   📋 Part 2 Assessment: http://${localIP}:${PORT}/api/assess-part2-speaking`);
+  console.log('=' .repeat(50));
+  console.log('💡 Update your .env file with:');
+  console.log(`   EXPO_PUBLIC_BACKEND_URL=http://${localIP}:${PORT}`);
+  console.log('=' .repeat(50));
 });

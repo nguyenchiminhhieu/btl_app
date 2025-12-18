@@ -36,8 +36,8 @@ export * from './dictionary-types';
 // IELTS Speaking Part 1 (Python Backend)
 export * from './part1-service';
 export {
-  type AssessmentResult as Part1AssessmentResult,
-  type ContentResult as Part1ContentResult
+  type Part1Answer, type AssessmentResult as Part1AssessmentResult,
+  type ContentResult as Part1ContentResult, type Part1SessionData
 } from './part1-types';
 
 // IELTS Speaking Part 2 (Python Backend)

@@ -1,371 +1,464 @@
-import { UserProfile } from '@/components/auth/UserProfile';
-import { Colors } from '@/constants/theme';
+import {
+    BodySmall,
+    Caption,
+    Card,
+    Container,
+    DesignTokens,
+    Heading3,
+    Heading4,
+    HStack,
+    VStack
+} from '@/components/design-system';
+import { useAuth } from '@/contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import {
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { Text, TouchableOpacity } from 'react-native';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { user } = useAuth();
+  
+  // Get display name from user data
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Học viên';
+  
+  // Mock streak/progress data - later integrate with actual progress tracking
 
-  const features = [
+
+  // Inspirational quotes for language learning
+  const motivationalQuotes = [
     {
-      icon: 'mic',
-      title: 'IELTS Speaking',
-      description: 'Luyện thi nói với AI chấm điểm',
-      color: Colors.primary.main,
-      gradient: Colors.primary.gradient,
-      onPress: () => router.push('/(tabs)/speaking'),
+      text: "Ngôn ngữ không phải là vấn đề của người thông minh hay ngu dốt, mà là vấn đề của người có cố gắng hay không.",
+      author: "Haruki Murakami",
+      icon: "📚"
     },
     {
-      icon: 'book',
-      title: 'Từ vựng',
-      description: 'Học từ vựng với flashcards',
-      color: Colors.secondary.main,
-      gradient: Colors.secondary.gradient,
-      onPress: () => {},
+      text: "The limits of my language mean the limits of my world.", 
+      author: "Ludwig Wittgenstein",
+      icon: "🌍"
     },
     {
-      icon: 'headset',
-      title: 'Nghe hiểu',
-      description: 'Luyện nghe với native speakers',
-      color: Colors.accent.info,
-      gradient: ['#3B82F6', '#06B6D4'] as const,
-      onPress: () => {},
+      text: "Learning another language is not only learning different words, but also learning another way to think.",
+      author: "Flora Lewis", 
+      icon: "🧠"
     },
     {
-      icon: 'document-text',
-      title: 'Ngữ pháp',
-      description: 'Bài tập ngữ pháp tương tác',
-      color: Colors.accent.success,
-      gradient: ['#10B981', '#14B8A6'] as const,
-      onPress: () => {},
-    },
+      text: "Mỗi ngôn ngữ bạn học được là một con người mới trong bạn được sinh ra.",
+      author: "Czech Proverb",
+      icon: "✨"
+    }
+  ];
+  
+  // Rotate quotes based on day of month to keep it fresh
+  const currentQuote = motivationalQuotes[new Date().getDate() % motivationalQuotes.length];
+
+  // Mock goals data
+  const dailyGoals = [
+    { id: 1, text: 'Hoàn thành 3 bài tập', completed: true },
+    { id: 2, text: 'Học 20 từ vựng mới', completed: true },
+    { id: 3, text: 'Luyện nói 15 phút', completed: true },
+    { id: 4, text: 'Hoàn thành 2 bài kiểm tra', completed: false },
+    { id: 5, text: 'Xem 1 video học tập', completed: false },
   ];
 
-  return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header with Gradient */}
-      <LinearGradient
-        colors={Colors.primary.gradient}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <UserProfile />
-        
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Lingua Talk</Text>
-          <Text style={styles.headerSubtitle}>Talk. Be Heard</Text>
-          
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Ionicons name="flame" size={24} color="#FFF" />
-              <Text style={styles.statValue}>7</Text>
-              <Text style={styles.statLabel}>days streak</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Ionicons name="trophy" size={24} color="#FFD700" />
-              <Text style={styles.statValue}>1,240</Text>
-              <Text style={styles.statLabel}>points</Text>
-            </View>
-          </View>
-        </View>
-      </LinearGradient>
+  const completedGoals = dailyGoals.filter(goal => goal.completed).length;
 
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🚀 Bắt đầu học ngay</Text>
-        
-        <View style={styles.featuresGrid}>
-          {features.map((feature, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.featureCard}
-              onPress={feature.onPress}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={feature.gradient}
-                style={styles.featureGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+  return (
+    <Container scrollable>
+      <VStack gap="lg" style={{ paddingTop: DesignTokens.spacing.xl }}>
+        {/* Header Section */}
+        <HStack justify="space-between" align="center">
+          <VStack gap="xs">
+            <Heading3>Xin chào, {displayName}!</Heading3>
+            <Caption>Sẵn sàng luyện tập hôm nay?</Caption>
+          </VStack>
+          <TouchableOpacity 
+            onPress={() => {/* Handle settings */}}
+            accessibilityLabel="Settings"
+          >
+            <Ionicons 
+              name="settings-outline" 
+              size={24} 
+              color={DesignTokens.colors.neutral[600]} 
+            />
+          </TouchableOpacity>
+        </HStack>
+
+        {/* Motivational Quote Card */}
+        <Card 
+          variant="gradient" 
+          padding="xl"
+          style={{
+            borderRadius: DesignTokens.radius.lg,
+            shadowColor: DesignTokens.colors.primary[600],
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 12,
+            elevation: 8,
+          }}
+        >
+          <VStack gap="lg" align="center">
+            <Text style={{ fontSize: 32 }}>{currentQuote.icon}</Text>
+            
+            <VStack gap="md" align="center">
+              <Heading4 
+                color={DesignTokens.colors.neutral[0]}
+                style={{ 
+                  textAlign: 'center',
+                  lineHeight: 28,
+                  fontStyle: 'italic'
+                }}
               >
-                <View style={styles.featureIconContainer}>
-                  <Ionicons name={feature.icon as any} size={32} color="#FFF" />
-                </View>
-                <Text style={styles.featureTitle}>{feature.title}</Text>
-                <Text style={styles.featureDescription}>{feature.description}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+                "{currentQuote.text}"
+              </Heading4>
+              
+              <Caption 
+                color={DesignTokens.colors.neutral[100]}
+                style={{ fontWeight: '600' }}
+              >
+                — {currentQuote.author}
+              </Caption>
+            </VStack>
+            
+  
+          </VStack>
+        </Card>
 
-      {/* Daily Goal */}
-      <View style={styles.section}>
-        <View style={styles.goalCard}>
-          <View style={styles.goalHeader}>
-            <Text style={styles.goalTitle}>📈 Mục tiêu hôm nay</Text>
-            <Text style={styles.goalProgress}>3/5 hoàn thành</Text>
-          </View>
-          
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '60%' }]} />
-          </View>
-          
-          <View style={styles.goalList}>
-            <GoalItem completed icon="checkmark-circle" text="Hoàn thành 3 bài tập" />
-            <GoalItem completed icon="checkmark-circle" text="Học 20 từ vựng mới" />
-            <GoalItem completed icon="checkmark-circle" text="Luyện speaking 15 phút" />
-            <GoalItem icon="ellipse-outline" text="Hoàn thành 2 bài kiểm tra" />
-            <GoalItem icon="ellipse-outline" text="Xem 1 video học liệu" />
-          </View>
-        </View>
-      </View>
+        {/* Practice Speaking Section */}
+        <Card variant="outlined" padding="lg">
+          <VStack gap="lg">
+            <HStack justify="space-between" align="center">
+              <Heading3>🎯 Luyện Speaking</Heading3>
+              <Caption color={DesignTokens.colors.primary[600]}>Chọn phần thi</Caption>
+            </HStack>
+            
+            <VStack gap="md">
+              <SpeakingPartButton
+                title="Part 1 - Giới thiệu"
+                description="Câu hỏi về bản thân và chủ đề quen thuộc"
+                icon="person-outline"
+                color={DesignTokens.colors.primary[500]}
+                duration="4-5 phút"
+                onPress={() => router.push('/(tabs)/speaking')}
+              />
+              
+              <SpeakingPartButton
+                title="Part 2 - Cue Card"
+                description="Thuyết trình 2 phút về chủ đề được cho"
+                icon="document-text-outline"
+                color={DesignTokens.colors.accent[500]}
+                duration="3-4 phút"
+                onPress={() => router.push('/(tabs)/speaking/part2')}
+              />
+              
+              <SpeakingPartButton
+                title="Part 3 - Thảo luận"
+                description="Thảo luận sâu về chủ đề trong Part 2"
+                icon="chatbubbles-outline"
+                color={DesignTokens.colors.success}
+                duration="4-5 phút"
+                onPress={() => router.push('/(tabs)/speaking/part3')}
+              />
+            </VStack>
+          </VStack>
+        </Card>
 
-      {/* Tips */}
-      <View style={styles.section}>
-        <View style={styles.tipCard}>
-          <View style={styles.tipIcon}>
-            <Ionicons name="bulb" size={28} color={Colors.accent.warning} />
-          </View>
-          <View style={styles.tipContent}>
-            <Text style={styles.tipTitle}>💡 Mẹo học tập</Text>
-            <Text style={styles.tipText}>
-              Học đều đặn 30 phút mỗi ngày hiệu quả hơn học dồn 3 tiếng mỗi tuần!
-            </Text>
-          </View>
-        </View>
-      </View>
+        {/* Daily Goals */}
+        <Card 
+          variant="default" 
+          padding="lg"
+          style={{
+            borderRadius: DesignTokens.radius.lg,
+            backgroundColor: DesignTokens.colors.neutral[50],
+            borderColor: DesignTokens.colors.primary[200],
+          }}
+        >
+          <VStack gap="lg">
+            <HStack justify="space-between" align="center">
+              <HStack gap="sm" align="center">
+                <Text style={{ fontSize: 28 }}>🎯</Text>
+                <Heading3 color={DesignTokens.colors.neutral[800]}>Mục tiêu hôm nay</Heading3>
+              </HStack>
+              <VStack align="flex-end" gap="xs">
+                <Caption 
+                  color={DesignTokens.colors.primary[600]}
+                  style={{ fontWeight: '600' }}
+                >
+                  {completedGoals}/{dailyGoals.length} hoàn thành
+                </Caption>
+                <Caption color={DesignTokens.colors.neutral[500]}>
+                  {Math.round((completedGoals / dailyGoals.length) * 100)}%
+                </Caption>
+              </VStack>
+            </HStack>
+            
+            <ProgressBar 
+              progress={(completedGoals / dailyGoals.length) * 100} 
+            />
+            
+            <VStack gap="sm">
+              {dailyGoals.map((goal) => (
+                <EnhancedGoalItem 
+                  key={goal.id}
+                  completed={goal.completed}
+                  text={goal.text}
+                />
+              ))}
+            </VStack>
+            
+            {completedGoals === dailyGoals.length && (
+              <Card 
+                variant="success" 
+                padding="md"
+                style={{ marginTop: DesignTokens.spacing.sm }}
+              >
+                <HStack gap="sm" align="center">
+                  <Text style={{ fontSize: 24 }}>🎉</Text>
+                  <VStack gap="xs" style={{ flex: 1 }}>
+                    <BodySmall 
+                      weight="semibold"
+                      color={DesignTokens.colors.success}
+                    >
+                      Xuất sắc! Bạn đã hoàn thành tất cả mục tiêu!
+                    </BodySmall>
+                    <Caption color={DesignTokens.colors.neutral[600]}>
+                      Tiếp tục phát huy nhé! 💪
+                    </Caption>
+                  </VStack>
+                </HStack>
+              </Card>
+            )}
+          </VStack>
+        </Card>
 
-      <View style={{ height: 32 }} />
-    </ScrollView>
+        {/* Dictionary Access */}
+        <Card 
+          variant="outlined" 
+          padding="md"
+          pressable 
+          onPress={() => router.push('/(tabs)/dictionary')}
+        >
+          <HStack justify="space-between" align="center">
+            <HStack gap="sm" align="center">
+              <Ionicons 
+                name="book-outline" 
+                size={24} 
+                color={DesignTokens.colors.primary[600]} 
+              />
+              <VStack gap="xs">
+                <BodySmall weight="semibold">Từ vựng đã lưu</BodySmall>
+                <Caption>Xây dựng vốn từ vựng của bạn</Caption>
+              </VStack>
+            </HStack>
+            <Ionicons 
+              name="chevron-forward" 
+              size={20} 
+              color={DesignTokens.colors.neutral[400]}
+            />
+          </HStack>
+        </Card>
+
+        {/* Learning Tip */}
+        <Card variant="outlined" padding="md">
+          <HStack gap="md" align="flex-start">
+            <VStack align="center" gap="xs">
+              <Text style={{ fontSize: 24 }}>💡</Text>
+            </VStack>
+            <VStack gap="xs" style={{ flex: 1 }}>
+              <BodySmall weight="semibold">Mẹo học tập hàng ngày</BodySmall>
+              <Caption>
+                Luyện nói chỉ 15 phút mỗi ngày. Kiên trì quan trọng hơn cường độ!
+              </Caption>
+            </VStack>
+          </HStack>
+        </Card>
+      </VStack>
+    </Container>
   );
 }
 
-function GoalItem({ completed, icon, text }: { completed?: boolean; icon: string; text: string }) {
-  return (
-    <View style={styles.goalItem}>
-      <Ionicons 
-        name={icon as any} 
-        size={20} 
-        color={completed ? Colors.accent.success : Colors.neutral.textMuted} 
-      />
-      <Text style={[styles.goalText, completed && styles.goalTextCompleted]}>{text}</Text>
-    </View>
-  );
-}
+// Helper Components
+const MiniStatItem: React.FC<{ icon: string; value: number | string; label: string }> = ({
+  icon,
+  value,
+  label,
+}) => (
+  <VStack align="center" gap="xs">
+    <Text style={{ fontSize: 18 }}>{icon}</Text>
+    <Heading4 color={DesignTokens.colors.neutral[0]} style={{ fontSize: 20 }}>
+      {value}
+    </Heading4>
+    <Caption color={DesignTokens.colors.neutral[200]} style={{ fontSize: 11 }}>
+      {label}
+    </Caption>
+  </VStack>
+);
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.neutral.bg,
-  },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 32,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerContent: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 42,
-    fontWeight: 'bold',
-    color: '#FFF',
-    letterSpacing: 2,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#FFF',
-    opacity: 0.9,
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    marginTop: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginTop: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#FFF',
-    opacity: 0.8,
-    marginTop: 2,
-  },
-  section: {
-    paddingHorizontal: 20,
-    marginTop: 24,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: Colors.neutral.text,
-    marginBottom: 16,
-  },
-  featuresGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -8,
-  },
-  featureCard: {
-    width: (width - 56) / 2,
-    margin: 8,
-    borderRadius: 20,
-    overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-  },
-  featureGradient: {
-    padding: 20,
-    minHeight: 160,
-  },
-  featureIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  featureTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginBottom: 6,
-  },
-  featureDescription: {
-    fontSize: 13,
-    color: '#FFF',
-    opacity: 0.9,
-    lineHeight: 18,
-  },
-  goalCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-  },
-  goalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  goalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.neutral.text,
-  },
-  goalProgress: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.primary.main,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: Colors.neutral.border,
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.primary.main,
-    borderRadius: 4,
-  },
-  goalList: {
-    gap: 12,
-  },
-  goalItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  goalText: {
-    fontSize: 15,
-    color: Colors.neutral.text,
-    flex: 1,
-  },
-  goalTextCompleted: {
-    textDecorationLine: 'line-through',
-    color: Colors.neutral.textMuted,
-  },
-  tipCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 20,
-    flexDirection: 'row',
-    gap: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.accent.warning,
-  },
-  tipIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFF5E6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tipContent: {
-    flex: 1,
-  },
-  tipTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.neutral.text,
-    marginBottom: 6,
-  },
-  tipText: {
-    fontSize: 14,
-    color: Colors.neutral.textLight,
-    lineHeight: 20,
-  },
-});
+const SpeakingPartButton: React.FC<{
+  title: string;
+  description: string;
+  icon: string;
+  color: string;
+  duration: string;
+  onPress: () => void;
+}> = ({ title, description, icon, color, duration, onPress }) => (
+  <TouchableOpacity onPress={onPress}>
+    <Card 
+      variant="outlined"
+      padding="md"
+      style={{
+        borderColor: color,
+        borderWidth: 1.5,
+        borderRadius: DesignTokens.radius.md,
+      }}
+    >
+      <HStack justify="space-between" align="center">
+        <HStack gap="md" align="center" style={{ flex: 1 }}>
+          <VStack 
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: DesignTokens.radius.full,
+              backgroundColor: `${color}15`,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Ionicons name={icon as any} size={24} color={color} />
+          </VStack>
+          
+          <VStack gap="xs" style={{ flex: 1 }}>
+            <BodySmall 
+              weight="semibold"
+              color={DesignTokens.colors.neutral[800]}
+            >
+              {title}
+            </BodySmall>
+            <Caption 
+              color={DesignTokens.colors.neutral[500]}
+              style={{ lineHeight: 16 }}
+            >
+              {description}
+            </Caption>
+          </VStack>
+        </HStack>
+        
+        <VStack align="flex-end" gap="xs">
+          <Caption 
+            color={color}
+            style={{ fontWeight: '600' }}
+          >
+            {duration}
+          </Caption>
+          <Ionicons 
+            name="chevron-forward" 
+            size={16} 
+            color={DesignTokens.colors.neutral[400]} 
+          />
+        </VStack>
+      </HStack>
+    </Card>
+  </TouchableOpacity>
+);
+
+const EnhancedGoalItem: React.FC<{ completed: boolean; text: string }> = ({
+  completed,
+  text,
+}) => (
+  <TouchableOpacity disabled>
+    <HStack 
+      gap="md" 
+      align="center"
+      style={{
+        paddingVertical: DesignTokens.spacing.sm,
+        paddingHorizontal: DesignTokens.spacing.md,
+        borderRadius: DesignTokens.radius.md,
+        backgroundColor: completed 
+          ? `${DesignTokens.colors.success}10` 
+          : DesignTokens.colors.neutral[0],
+        borderWidth: 1,
+        borderColor: completed 
+          ? DesignTokens.colors.success 
+          : DesignTokens.colors.neutral[200],
+      }}
+    >
+      <VStack
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: DesignTokens.radius.full,
+          backgroundColor: completed 
+            ? DesignTokens.colors.success 
+            : DesignTokens.colors.neutral[200],
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        {completed && (
+          <Ionicons
+            name="checkmark"
+            size={14}
+            color={DesignTokens.colors.neutral[0]}
+          />
+        )}
+      </VStack>
+      
+      <BodySmall
+        style={{
+          flex: 1,
+          textDecorationLine: completed ? 'line-through' : 'none',
+          color: completed 
+            ? DesignTokens.colors.neutral[500] 
+            : DesignTokens.colors.neutral[800],
+          fontWeight: completed ? '400' : '500',
+        }}
+      >
+        {text}
+      </BodySmall>
+      
+      {completed && (
+        <Text style={{ fontSize: 16 }}>✅</Text>
+      )}
+    </HStack>
+  </TouchableOpacity>
+);
+
+const ProgressBar: React.FC<{ progress: number }> = ({ progress }) => (
+  <VStack gap="xs">
+    <VStack 
+      style={{
+        height: 12,
+        backgroundColor: DesignTokens.colors.neutral[200],
+        borderRadius: DesignTokens.radius.full,
+        overflow: 'hidden',
+        shadowColor: DesignTokens.colors.neutral[400],
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 1,
+      }}
+    >
+      <VStack
+        style={{
+          height: '100%',
+          width: `${Math.max(0, Math.min(100, progress))}%`,
+          backgroundColor: progress === 100 
+            ? DesignTokens.colors.success 
+            : DesignTokens.colors.primary[600],
+          borderRadius: DesignTokens.radius.full,
+          shadowColor: progress === 100 
+            ? DesignTokens.colors.success 
+            : DesignTokens.colors.primary[600],
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 2,
+        }}
+      >
+        <></>
+      </VStack>
+    </VStack>
+  </VStack>
+);
+
+// No styles needed - using design system components

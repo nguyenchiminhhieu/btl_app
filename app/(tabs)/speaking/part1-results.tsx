@@ -1,6 +1,7 @@
 import { QuestionResult } from '@/components/speaking';
 import { Colors } from '@/constants/theme';
 import type { AssessmentResult, Part1Answer } from '@/services';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -41,7 +42,7 @@ export default function Part1ResultsScreen() {
         console.error('Error parsing results:', error);
       }
     }
-  }, [params]);
+  }, [params.singleResult, params.results]);
 
   // If showing single question result
   if (singleResult) {

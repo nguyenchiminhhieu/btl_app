@@ -1,360 +1,279 @@
-import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { TouchableOpacity } from 'react-native';
+
+// Design system imports
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+  Body,
+  Caption,
+  Card,
+  Container,
+  Heading3,
+  HStack,
+  VStack
+} from '@/components/design-system';
+import { DesignTokens } from '@/constants/design-tokens';
+
+interface SpeakingPartCardProps {
+  partNumber: string;
+  title: string;
+  description: string;
+  badge: string;
+  icon: string;
+  timeInfo: string;
+  additionalInfo: string;
+  onPress: () => void;
+}
+
+// Mini Feature Component
+const MiniFeature: React.FC<{ icon: string; text: string }> = ({ icon, text }) => (
+  <HStack gap="xs" align="center">
+    <Ionicons name={icon as any} size={14} color={DesignTokens.colors.neutral[0]} />
+    <Caption color={DesignTokens.colors.neutral[100]} style={{ fontSize: 11 }}>
+      {text}
+    </Caption>
+  </HStack>
+);
+
+function SpeakingPartCard({ 
+  partNumber, 
+  title, 
+  description, 
+  badge, 
+  icon, 
+  timeInfo, 
+  additionalInfo, 
+  onPress 
+}: SpeakingPartCardProps) {
+  const getPartColor = () => {
+    if (partNumber === 'Phần 1') return DesignTokens.colors.primary[500];
+    if (partNumber === 'Phần 2') return DesignTokens.colors.accent[500];
+    return DesignTokens.colors.success;
+  };
+  
+  const partColor = getPartColor();
+  
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+      <Card 
+        variant="default" 
+        padding="lg"
+        style={{
+          borderColor: partColor,
+          borderWidth: 1.5,
+          borderRadius: DesignTokens.radius.lg,
+        }}
+      >
+        <VStack gap="md">
+          {/* Enhanced Header */}
+          <HStack justify="space-between" align="center">
+            <HStack gap="md" align="center">
+              <VStack 
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: DesignTokens.radius.full,
+                  backgroundColor: `${partColor}15`,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Ionicons name={icon as any} size={28} color={partColor} />
+              </VStack>
+              <VStack gap="xs">
+                <Heading3 color={partColor} weight="bold">{partNumber}</Heading3>
+                <Caption color={partColor} weight="medium">{badge}</Caption>
+              </VStack>
+            </HStack>
+            
+            <Ionicons name="chevron-forward-circle" size={32} color={partColor} />
+          </HStack>
+          
+          {/* Content */}
+          <VStack gap="xs">
+            <Heading3 color={DesignTokens.colors.neutral[800]}>
+              {title}
+            </Heading3>
+            <Body color={DesignTokens.colors.neutral[600]} style={{ lineHeight: 22 }}>
+              {description}
+            </Body>
+          </VStack>
+          
+          {/* Enhanced Footer */}
+          <HStack gap="lg" align="center" style={{ marginTop: DesignTokens.spacing.xs }}>
+            <HStack gap="xs" align="center" style={{ flex: 1 }}>
+              <Ionicons name="time-outline" size={18} color={DesignTokens.colors.neutral[500]} />
+              <Caption color={DesignTokens.colors.neutral[600]} weight="medium">{timeInfo}</Caption>
+            </HStack>
+            <HStack gap="xs" align="center" style={{ flex: 1 }}>
+              <Ionicons name="chatbubbles-outline" size={18} color={DesignTokens.colors.neutral[500]} />
+              <Caption color={DesignTokens.colors.neutral[600]} weight="medium">{additionalInfo}</Caption>
+            </HStack>
+          </HStack>
+        </VStack>
+      </Card>
+    </TouchableOpacity>
+  );
+}
 
 export default function SpeakingIndexScreen() {
   const router = useRouter();
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header with Gradient */}
-      <LinearGradient
-        colors={Colors.primary.gradient}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      >
-        <View style={styles.headerIcon}>
-          <Ionicons name="chatbubbles" size={40} color="#FFF" />
-        </View>
-        <Text style={styles.headerTitle}>IELTS Speaking Practice</Text>
-        <Text style={styles.headerSubtitle}>
-          Master your speaking skills with AI-powered assessment
-        </Text>
-      </LinearGradient>
+    <Container scrollable>
+      <VStack gap="lg" style={{ paddingTop: DesignTokens.spacing.xl }}>
+        {/* Header Section */}
+        <HStack justify="space-between" align="center">
+          <VStack gap="xs">
+            <Heading3>🎤 Luyện Nói IELTS</Heading3>
+            <Caption>Nâng cao kỹ năng Speaking của bạn</Caption>
+          </VStack>
+          <TouchableOpacity 
+            onPress={() => {/* Handle stats/history */}}
+            accessibilityLabel="Speaking Stats"
+          >
+            <Ionicons 
+              name="stats-chart-outline" 
+              size={24} 
+              color={DesignTokens.colors.neutral[600]} 
+            />
+          </TouchableOpacity>
+        </HStack>
+        
+        {/* Feature Highlights Card */}
+        <Card variant="gradient" padding="lg">
+          <VStack gap="md">
+            <HStack gap="md" align="center">
+              <VStack 
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: DesignTokens.radius.full,
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Ionicons name="mic-circle" size={28} color={DesignTokens.colors.neutral[0]} />
+              </VStack>
+              <VStack gap="xs" style={{ flex: 1 }}>
+                <Heading3 color={DesignTokens.colors.neutral[0]}>3 Phần Thi Hoàn Chỉnh</Heading3>
+                <Caption color={DesignTokens.colors.neutral[100]}>Hệ thống phản hồi AI thông minh</Caption>
+              </VStack>
+            </HStack>
+            
+            <HStack gap="md" justify="space-around" style={{ marginTop: DesignTokens.spacing.xs }}>
+              <MiniFeature icon="checkmark-circle" text="4-5 phút/phần" />
+              <MiniFeature icon="analytics" text="AI Feedback" />
+              <MiniFeature icon="trending-up" text="Theo dõi tiến độ" />
+            </HStack>
+          </VStack>
+        </Card>
 
-      <View style={styles.cardsContainer}>
-        {/* Part 1 Card */}
-        <TouchableOpacity
-          style={styles.card}
+        {/* Speaking Parts Section */}
+        <VStack gap="md">
+        {/* Part Cards - Education Focused */}
+        <SpeakingPartCard
+          partNumber="Phần 1"
+          title="Giới thiệu & Trò chuyện"
+          description="Chia sẻ về bản thân, gia đình và sở thích một cách tự nhiên và thân thiện"
+          badge="9 chủ đề quen thuộc"
+          icon="person-circle"
+          timeInfo="4-5 phút"
+          additionalInfo="Câu trả lời ngắn"
           onPress={() => router.push('/(tabs)/speaking/part1' as any)}
-          activeOpacity={0.9}
-        >
-          <LinearGradient
-            colors={[Colors.primary.main, Colors.primary.dark]}
-            style={styles.cardGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.cardIconContainer}>
-              <Ionicons name="person" size={32} color="#FFF" />
-            </View>
-            <View style={styles.cardContent}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardNumber}>Part 1</Text>
-                <View style={styles.cardBadgeContainer}>
-                  <Text style={styles.cardBadge}>9 câu hỏi</Text>
-                </View>
-              </View>
-              <Text style={styles.cardTitle}>Introduction & Interview</Text>
-              <Text style={styles.cardDescription}>
-                Trả lời các câu hỏi về bản thân, gia đình, sở thích và cuộc sống hàng ngày
-              </Text>
-              <View style={styles.cardFooter}>
-                <View style={styles.cardInfoItem}>
-                  <Ionicons name="time" size={16} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.cardInfo}>4-5 phút</Text>
-                </View>
-                <View style={styles.cardInfoItem}>
-                  <Ionicons name="chatbubbles" size={16} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.cardInfo}>Câu trả lời ngắn</Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.cardArrow}>
-              <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.7)" />
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
+        />
 
-        {/* Part 2 Card */}
-        <TouchableOpacity
-          style={styles.card}
+        <SpeakingPartCard
+          partNumber="Phần 2" 
+          title="Trình bày cá nhân"
+          description="Kể một câu chuyện hoặc mô tả chi tiết về chủ đề được giao trong 2 phút"
+          badge="50+ chủ đề đa dạng"
+          icon="document-text-outline"
+          timeInfo="3-4 phút" 
+          additionalInfo="Có thời gian chuẩn bị"
           onPress={() => router.push('/(tabs)/speaking/part2' as any)}
-          activeOpacity={0.9}
-        >
-          <LinearGradient
-            colors={[Colors.secondary.main, Colors.secondary.dark]}
-            style={styles.cardGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.cardIconContainer}>
-              <Ionicons name="document-text" size={32} color="#FFF" />
-            </View>
-            <View style={styles.cardContent}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardNumber}>Part 2</Text>
-                <View style={styles.cardBadgeContainer}>
-                  <Text style={styles.cardBadge}>35 chủ đề</Text>
-                </View>
-              </View>
-              <Text style={styles.cardTitle}>Long Turn (Cue Card)</Text>
-              <Text style={styles.cardDescription}>
-                Nói về một chủ đề trong 1-2 phút sau khi chuẩn bị 1 phút
-              </Text>
-              <View style={styles.cardFooter}>
-                <View style={styles.cardInfoItem}>
-                  <Ionicons name="time" size={16} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.cardInfo}>3-4 phút</Text>
-                </View>
-                <View style={styles.cardInfoItem}>
-                  <Ionicons name="create" size={16} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.cardInfo}>Có chuẩn bị</Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.cardArrow}>
-              <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.7)" />
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
+        />
 
-        {/* Part 3 Card */}
-        <TouchableOpacity
-          style={styles.card}
+        <SpeakingPartCard
+          partNumber="Phần 3"
+          title="Thảo luận chuyên sâu"
+          description="Thảo luận những ý tưởng trừu tượng và phức tạp với phản hồi AI thông minh"
+          badge="Tương tác thực tế"
+          icon="people-circle"
+          timeInfo="4-5 phút"
+          additionalInfo="AI hỗ trợ"
           onPress={() => router.push('/(tabs)/speaking/part3' as any)}
-          activeOpacity={0.9}
-        >
-          <LinearGradient
-            colors={[Colors.accent.info, '#06B6D4']}
-            style={styles.cardGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.cardIconContainer}>
-              <Ionicons name="people" size={32} color="#FFF" />
-            </View>
-            <View style={styles.cardContent}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardNumber}>Part 3</Text>
-                <View style={styles.cardBadgeContainer}>
-                  <Text style={styles.cardBadge}>Live Discussion</Text>
-                </View>
-              </View>
-              <Text style={styles.cardTitle}>Two-way Discussion</Text>
-              <Text style={styles.cardDescription}>
-                Thảo luận sâu hơn về chủ đề với các câu hỏi trừu tượng và phản hồi real-time từ AI
-              </Text>
-              <View style={styles.cardFooter}>
-                <View style={styles.cardInfoItem}>
-                  <Ionicons name="time" size={16} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.cardInfo}>4-5 phút</Text>
-                </View>
-                <View style={styles.cardInfoItem}>
-                  <Ionicons name="sparkles" size={16} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.cardInfo}>AI Powered</Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.cardArrow}>
-              <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.7)" />
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
+        />
+      </VStack>
 
-      {/* Info Section */}
-      <View style={styles.infoSection}>
-        <Text style={styles.infoTitle}>Cách thức hoạt động</Text>
-        <View style={styles.infoItem}>
-          <Text style={styles.infoNumber}>1</Text>
-          <Text style={styles.infoText}>
-            Chọn Part bạn muốn luyện tập
-          </Text>
-        </View>
-        <View style={styles.infoItem}>
-          <Text style={styles.infoNumber}>2</Text>
-          <Text style={styles.infoText}>
-            Trả lời các câu hỏi bằng cách thu âm giọng nói
-          </Text>
-        </View>
-        <View style={styles.infoItem}>
-          <Text style={styles.infoNumber}>3</Text>
-          <Text style={styles.infoText}>
-            Nhận feedback chi tiết về phát âm và nội dung từ AI
-          </Text>
-        </View>
-        <View style={styles.infoItem}>
-          <Text style={styles.infoNumber}>4</Text>
-          <Text style={styles.infoText}>
-            Cải thiện dựa trên gợi ý và luyện tập lại
-          </Text>
-        </View>
-      </View>
-    </ScrollView>
+        {/* Learning Journey Section */}
+        <Card variant="outlined" padding="lg">
+          <VStack gap="lg">
+            <HStack gap="sm" align="center">
+              <Ionicons name="map-outline" size={24} color={DesignTokens.colors.primary[600]} />
+              <VStack gap="xs" style={{ flex: 1 }}>
+                <Heading3 color={DesignTokens.colors.neutral[800]}>Hành trình học tập</Heading3>
+                <Caption color={DesignTokens.colors.neutral[600]}>4 bước đơn giản để nâng cao kỹ năng</Caption>
+              </VStack>
+            </HStack>
+            
+            <VStack gap="sm">
+              {[
+                { 
+                  text: 'Chọn phần bạn muốn luyện tập', 
+                  icon: 'play-circle',
+                  color: DesignTokens.colors.primary[600]
+                },
+                { 
+                  text: 'Thực hành với câu hỏi thực tế', 
+                  icon: 'mic',
+                  color: DesignTokens.colors.accent[600]
+                },
+                { 
+                  text: 'Nhận phản hồi AI chi tiết', 
+                  icon: 'analytics',
+                  color: DesignTokens.colors.info
+                },
+                { 
+                  text: 'Theo dõi tiến độ của bạn', 
+                  icon: 'trophy',
+                  color: DesignTokens.colors.success
+                }
+              ].map((step, index) => (
+                <HStack key={index} gap="md" align="center" style={{
+                  paddingVertical: DesignTokens.spacing.sm,
+                  paddingHorizontal: DesignTokens.spacing.md,
+                  borderRadius: DesignTokens.radius.md,
+                  backgroundColor: DesignTokens.colors.neutral[50],
+                }}>
+                  <VStack
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: DesignTokens.radius.full,
+                      backgroundColor: `${step.color}20`,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Caption color={step.color} weight="bold">{index + 1}</Caption>
+                  </VStack>
+                  <HStack gap="sm" align="center" style={{ flex: 1 }}>
+                    <Ionicons name={step.icon as any} size={16} color={step.color} />
+                    <Body color={DesignTokens.colors.neutral[700]} style={{ flex: 1 }}>
+                      {step.text}
+                    </Body>
+                  </HStack>
+                </HStack>
+              ))}
+            </VStack>
+          </VStack>
+        </Card>
+      </VStack>
+    </Container>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.neutral.bg,
-  },
-  header: {
-    padding: 32,
-    paddingTop: 60,
-    alignItems: 'center',
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginBottom: 8,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#FFF',
-    opacity: 0.95,
-    lineHeight: 24,
-    textAlign: 'center',
-    paddingHorizontal: 20,
-  },
-  cardsContainer: {
-    padding: 20,
-    gap: 16,
-  },
-  card: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  cardGradient: {
-    flexDirection: 'row',
-    padding: 20,
-    alignItems: 'center',
-  },
-  cardIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  cardContent: {
-    flex: 1,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 12,
-  },
-  cardNumber: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
-  cardBadgeContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  cardBadge: {
-    fontSize: 12,
-    color: '#FFF',
-    fontWeight: '600',
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFF',
-    marginBottom: 6,
-  },
-  cardDescription: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  cardInfoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  cardInfo: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.9)',
-  },
-  cardArrow: {
-    marginLeft: 8,
-  },
-  cardDisabled: {
-    opacity: 0.6,
-  },
-  badgeDisabled: {
-    backgroundColor: '#999',
-  },
-  infoSection: {
-    backgroundColor: '#FFF',
-    margin: 20,
-    marginTop: 8,
-    padding: 24,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  infoTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.neutral.text,
-    marginBottom: 20,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 16,
-  },
-  infoNumber: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.primary.main,
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    lineHeight: 36,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 15,
-    color: Colors.neutral.textLight,
-    lineHeight: 22,
-  },
-});
+

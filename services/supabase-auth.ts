@@ -114,8 +114,10 @@ export class AuthService {
   onAuthStateChange(callback: (user: User | null) => void): () => void {
     this.authStateListeners.push(callback);
     
-    // Gọi callback ngay với user hiện tại
-    callback(this.currentUser);
+    // Gọi callback với delay nhỏ để tránh sync setState trong useEffect
+    setTimeout(() => {
+      callback(this.currentUser);
+    }, 0);
     
     // Trả về hàm unsubscribe
     return () => {

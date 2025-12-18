@@ -1,18 +1,29 @@
+import {
+    Button,
+    TextInput
+} from '@/components/design-system';
+import {
+    Container,
+    HStack,
+    Spacer,
+    VStack
+} from '@/components/design-system/Layout';
+import {
+    Body,
+    Caption,
+    Heading2,
+    Heading3
+} from '@/components/design-system/Typography';
+import { DesignTokens } from '@/constants/design-tokens';
 import { useAuth } from '@/contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Alert,
     KeyboardAvoidingView,
     Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+    TouchableOpacity
 } from 'react-native';
 
 export default function RegisterScreen() {
@@ -61,10 +72,10 @@ export default function RegisterScreen() {
       
       await signUp(email.trim(), password, displayName.trim());
       
-      console.log('Registration successful, navigating to tabs...'); // Debug log
+      console.log('Registration successful'); // Debug log
       
-      // Navigate to tabs after successful registration
-      router.replace('/(tabs)');
+      // No need to navigate - the root index.tsx will handle navigation
+      // based on the auth state change
     } catch (error: any) {
       console.error('Registration error:', error); // Debug log
       let errorMessage = 'Đăng ký thất bại';
@@ -101,325 +112,147 @@ export default function RegisterScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={['#202254', '#2D3A7F']}
-      style={styles.gradient}
+    <KeyboardAvoidingView 
+      style={{ flex: 1, backgroundColor: DesignTokens.colors.neutral[50] }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <KeyboardAvoidingView 
-        style={styles.container} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-        >
+      <Container scrollable>
+        <VStack gap="2xl" align="center" style={{ paddingVertical: DesignTokens.spacing['2xl'] }}>
+          
           {/* Header with Icon */}
-          <View style={styles.headerContainer}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="chatbubbles" size={50} color="#fff" />
-            </View>
-            <Text style={styles.appTitle}>Join Lingua Talk</Text>
-            <Text style={styles.appSubtitle}>Talk. Be Heard</Text>
-          </View>
+          <VStack gap="lg" align="center">
+            <VStack
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: 40,
+                backgroundColor: DesignTokens.colors.primary[600],
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="chatbubbles" size={40} color={DesignTokens.colors.neutral[0]} />
+            </VStack>
+            
+            <VStack gap="xs" align="center">
+              <Heading2 color={DesignTokens.colors.neutral[900]}>
+                Join Lingua Talk
+              </Heading2>
+              <Caption color={DesignTokens.colors.neutral[600]}>
+                Talk. Be Heard
+              </Caption>
+            </VStack>
+          </VStack>
 
-          {/* Form Container */}
-          <View style={styles.formContainer}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Start your speaking journey today</Text>
+          {/* Welcome Section */}
+          <VStack gap="xs" align="center">
+            <Heading3>Create Account</Heading3>
+            <Body align="center" color={DesignTokens.colors.neutral[600]}>
+              Start your speaking journey today
+            </Body>
+          </VStack>
 
-            {/* Email Input with Icon */}
-            <View style={styles.inputContainer}>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="mail-outline" size={20} color="#f5576c" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Your email address"
-                  placeholderTextColor="#999"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                />
-              </View>
-            </View>
+          {/* Form Section */}
+          <VStack gap="md" style={{ width: '100%' }}>
+            <TextInput
+              label="Email Address"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="your.email@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              leftIcon="mail-outline"
+              editable={!loading}
+            />
 
-            {/* Display Name Input with Icon */}
-            <View style={styles.inputContainer}>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="person-outline" size={20} color="#f5576c" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={displayName}
-                  onChangeText={setDisplayName}
-                  placeholder="Your name"
-                  placeholderTextColor="#999"
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  editable={!loading}
-                />
-              </View>
-            </View>
+            <TextInput
+              label="Full Name"
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="Your full name"
+              autoCapitalize="words"
+              leftIcon="person-outline"
+              editable={!loading}
+            />
 
-            {/* Password Input with Icon */}
-            <View style={styles.inputContainer}>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="key-outline" size={20} color="#f5576c" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Create a password (min 6 characters)"
-                  placeholderTextColor="#999"
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                />
-              </View>
-            </View>
+            <TextInput
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Create a password (min 6 characters)"
+              secureTextEntry={true}
+              autoCapitalize="none"
+              leftIcon="key-outline"
+              editable={!loading}
+            />
 
-            {/* Confirm Password Input with Icon */}
-            <View style={styles.inputContainer}>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="shield-checkmark-outline" size={20} color="#f5576c" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder="Confirm your password"
-                  placeholderTextColor="#999"
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                />
-              </View>
-            </View>
+            <TextInput
+              label="Confirm Password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Confirm your password"
+              secureTextEntry={true}
+              autoCapitalize="none"
+              leftIcon="shield-checkmark-outline"
+              editable={!loading}
+            />
+          </VStack>
 
-            {/* Register Button with Gradient */}
-            <TouchableOpacity 
+          {/* Action Buttons */}
+          <VStack gap="sm" style={{ width: '100%' }}>
+            <Button
+              variant="accent"
+              size="lg"
               onPress={handleRegister}
               disabled={loading}
-              activeOpacity={0.8}
+              loading={loading}
+              leftIcon={loading ? "hourglass-outline" : "checkmark-circle-outline"}
+              fullWidth
             >
-              <LinearGradient
-                colors={loading ? ['#ccc', '#999'] : ['#F97316', '#FBBF24']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.button}
-              >
-                {loading ? (
-                  <Ionicons name="hourglass-outline" size={24} color="#fff" />
-                ) : (
-                  <Ionicons name="checkmark-circle-outline" size={24} color="#fff" />
-                )}
-                <Text style={styles.buttonText}>
-                  {loading ? 'Creating account...' : 'Sign Up'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.dividerLine} />
-            </View>
+              {loading ? 'Creating account...' : 'Sign Up'}
+            </Button>
 
             {/* Login Link */}
-            <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Already have an account? </Text>
+            <HStack gap="xs" align="center" justify="center">
+              <Caption>Already have an account?</Caption>
               <TouchableOpacity onPress={goToLogin} disabled={loading}>
-                <Text style={styles.loginLink}>Sign In</Text>
+                <Caption weight="semibold" color={DesignTokens.colors.primary[600]}>
+                  Sign In
+                </Caption>
               </TouchableOpacity>
-            </View>
-          </View>
+            </HStack>
+          </VStack>
 
-          {/* Footer Benefits */}
-          <View style={styles.benefitsContainer}>
-            <Text style={styles.benefitsTitle}>What you'll get:</Text>
-            <View style={styles.benefitItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#fff" />
-              <Text style={styles.benefitText}>Personalized learning path</Text>
-            </View>
-            <View style={styles.benefitItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#fff" />
-              <Text style={styles.benefitText}>Interactive exercises & games</Text>
-            </View>
-            <View style={styles.benefitItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#fff" />
-              <Text style={styles.benefitText}>Progress tracking & certificates</Text>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </LinearGradient>
+          <Spacer height={DesignTokens.spacing.lg} />
+
+          {/* Benefits Section */}
+          <VStack gap="md" style={{ width: '100%' }}>
+            <Caption align="center" color={DesignTokens.colors.neutral[400]}>
+              What you'll get:
+            </Caption>
+            
+            <VStack gap="sm">
+              <FeatureItem icon="checkmark-circle" text="Personalized learning path" />
+              <FeatureItem icon="checkmark-circle" text="Interactive exercises & games" />
+              <FeatureItem icon="checkmark-circle" text="Progress tracking & certificates" />
+            </VStack>
+          </VStack>
+        </VStack>
+      </Container>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-  },
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  appTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  appSubtitle: {
-    fontSize: 16,
-    color: '#fff',
-    opacity: 0.9,
-    textAlign: 'center',
-  },
-  formContainer: {
-    backgroundColor: 'white',
-    borderRadius: 24,
-    padding: 28,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 10,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#2d3748',
-  },
-  subtitle: {
-    fontSize: 15,
-    textAlign: 'center',
-    marginBottom: 32,
-    color: '#718096',
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    backgroundColor: '#f7fafc',
-    paddingHorizontal: 16,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    padding: 16,
-    fontSize: 16,
-    color: '#2d3748',
-  },
-  button: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-    shadowColor: '#f5576c',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e2e8f0',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: '#a0aec0',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loginText: {
-    fontSize: 15,
-    color: '#718096',
-  },
-  loginLink: {
-    fontSize: 15,
-    color: '#f5576c',
-    fontWeight: 'bold',
-  },
-  benefitsContainer: {
-    marginTop: 40,
-    paddingHorizontal: 20,
-  },
-  benefitsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  benefitItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  benefitText: {
-    fontSize: 14,
-    color: '#fff',
-    marginLeft: 12,
-    flex: 1,
-  },
-});
+const FeatureItem: React.FC<{ icon: string; text: string }> = ({ icon, text }) => (
+  <HStack gap="sm" align="center">
+    <Ionicons 
+      name={icon as any} 
+      size={20} 
+      color={DesignTokens.colors.success}
+    />
+    <Body color={DesignTokens.colors.neutral[600]}>
+      {text}
+    </Body>
+  </HStack>
+);

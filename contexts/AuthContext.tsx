@@ -88,6 +88,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
    */
   useEffect(() => {
     console.log('AuthContext: Setting up auth state listener');
+    let isMounted = true;
+    let callbackCount = 0;
     
     /**
      * Timeout an toàn: Nếu sau 3s vẫn loading = true
@@ -95,8 +97,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
      * → Tránh loading mãi không dứng
      */
     const timeout = setTimeout(() => {
-      console.log('AuthContext: Force setting loading to false after timeout');
-      setLoading(false);
+      if (isMounted) {
+        console.log('AuthContext: Force setting loading to false after timeout');
+        setLoading(false);
+      }
     }, 3000); // 3000ms = 3 giây
     
     /**
@@ -107,11 +111,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
      * - Cập nhật user state
      * - Tắt loading
      */
-    const unsubscribe = authService.onAuthStateChange((user: User | null) => {
-      console.log('AuthContext: Auth state changed:', user ? 'User logged in' : 'No user');
-      clearTimeout(timeout); // Hủy timeout vì đã có kết quả
-      setUser(user); // Cập nhật user mới
-      setLoading(false); // Tắt loading
+    const unsubscribe = authService.onAuthStateChange((newUser: User | null) => {
+      callbackCount++;
+      console.log(`AuthContext: Auth state changed (call #${callbackCount}):`, newUser ? `User logged in (${newUser.email})` : 'No user');
+      
+      if (callbackCount > 5) {
+        console.warn('AuthContext: Too many auth state changes! Possible infinite loop');
+        return;
+      }
+      
+      if (isMounted) {
+        clearTimeout(timeout); // Hủy timeout vì đã có kết quả
+        setUser(prev => {
+          console.log('AuthContext: Updating user state from', prev?.email || 'null', 'to', newUser?.email || 'null');
+          return newUser;
+        });
+        setLoading(false); // Tắt loading
+      }
     });
 
     /**
@@ -123,6 +139,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
      * → Tránh memory leak (rò rỉ bộ nhớ)
      */
     return () => {
+      console.log('AuthContext: Cleaning up auth listener');
+      isMounted = false;
       clearTimeout(timeout);
       unsubscribe();
     };

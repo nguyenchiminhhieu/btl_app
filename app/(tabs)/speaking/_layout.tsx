@@ -1,3 +1,4 @@
+import { DesignTokens } from '@/constants/design-tokens';
 import { Stack } from 'expo-router';
 import React from 'react';
 
@@ -7,66 +8,69 @@ export default function SpeakingLayout() {
       screenOptions={{
         headerShown: true,
         headerStyle: {
-          backgroundColor: '#1E88E5',
+          backgroundColor: DesignTokens.colors.primary[600],
         },
-        headerTintColor: '#FFF',
+        headerTintColor: DesignTokens.colors.neutral[0],
         headerTitleStyle: {
-          fontWeight: 'bold',
+          fontWeight: '600',
+          fontSize: 18,
         },
+        headerShadowVisible: true,
+        animation: 'slide_from_right',
       }}
     >
       <Stack.Screen
         name="index"
         options={{
-          title: 'IELTS Speaking',
+          title: 'Luyện Nói IELTS',
         }}
       />
       <Stack.Screen
         name="part1"
         options={{
-          title: 'Part 1 - Interview',
+          title: 'Phần 1 - Giới thiệu',
         }}
       />
       <Stack.Screen
         name="part1-results"
         options={{
-          title: 'Kết quả Part 1',
+          title: 'Kết quả Phần 1',
         }}
       />
       <Stack.Screen
         name="part2"
         options={{
-          title: 'Part 2 - Cue Card',
+          title: 'Phần 2 - Cue Card',
         }}
       />
       <Stack.Screen
         name="part2-topics"
         options={{
-          title: 'Part 2 - Chọn chủ đề',
+          title: 'Phần 2 - Chọn chủ đề',
         }}
       />
       <Stack.Screen
         name="part2-cue-card"
         options={{
-          title: 'Part 2 - Chuẩn bị',
+          title: 'Phần 2 - Chuẩn bị',
         }}
       />
       <Stack.Screen
         name="part2-recording"
         options={{
-          title: 'Part 2 - Ghi âm',
+          title: 'Phần 2 - Ghi âm',
         }}
       />
       <Stack.Screen
         name="part2-results"
         options={{
-          title: 'Kết quả Part 2',
+          title: 'Kết quả Phần 2',
         }}
       />
       <Stack.Screen
         name="part3"
         options={{
-          title: 'Part 3 - Discussion',
+          title: 'Phần 3 - Thảo luận',
         }}
       />
     </Stack>

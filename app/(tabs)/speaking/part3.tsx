@@ -5,10 +5,9 @@
 
 import { AudioRecorder } from '@/components/speaking/AudioRecorder';
 import { Colors } from '@/constants/theme';
-import { GeminiLiveClient, getRandomPart3Topic } from '@/services/part3-service';
+import { convertAudioToBase64, GeminiLiveClient, getRandomPart3Topic, playAudioFromBase64 } from '@/services/part3-service';
 import type { Part3Topic } from '@/services/part3-types';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -37,6 +36,7 @@ export default function Part3Screen() {
   const [sessionStarted, setSessionStarted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   // Initialize Part 3 session
   useEffect(() => {
@@ -49,13 +49,16 @@ export default function Part3Screen() {
       const randomTopic = getRandomPart3Topic();
       setTopic(randomTopic);
 
-      // Initialize Gemini client
+      // Initialize Gemini client with speech API
       const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+      const speechToTextKey = process.env.EXPO_PUBLIC_SPEECH_TO_TEXT_API_KEY || '';
+      const textToSpeechKey = process.env.EXPO_PUBLIC_TEXT_TO_SPEECH_API_KEY || '';
+      
       if (!apiKey) {
         throw new Error('Gemini API key not configured');
       }
 
-      const client = new GeminiLiveClient(apiKey);
+      const client = new GeminiLiveClient(apiKey, speechToTextKey, textToSpeechKey);
       setGeminiClient(client);
 
       setIsLoading(false);
@@ -77,7 +80,19 @@ export default function Part3Screen() {
       // Connect to Gemini with topic question
       await geminiClient.connect(topic.main_question);
 
-      // Setup callbacks for text responses
+      // Setup callbacks
+      geminiClient.onAudio(async (audioBase64) => {
+        try {
+          console.log('Playing examiner audio response');
+          setIsPlayingAudio(true);
+          await playAudioFromBase64(audioBase64);
+          setIsPlayingAudio(false);
+        } catch (error) {
+          console.error('Error playing audio:', error);
+          setIsPlayingAudio(false);
+        }
+      });
+
       geminiClient.onText((text) => {
         // Add AI response to messages
         const message: Message = {
@@ -113,34 +128,20 @@ export default function Part3Screen() {
         throw new Error('Gemini client not initialized');
       }
 
-      // Show user that recording was received
+      // Add user message placeholder
       const userMessage: Message = {
         id: `msg_${Date.now()}`,
         role: 'user',
-        text: '🎤 Sending your response...',
+        text: '🎤 Transcribing your response...',
         timestamp: Date.now(),
       };
       setMessages((prev) => [...prev, userMessage]);
 
-      // TODO: Implement speech-to-text transcription
-      // For now, we'll use a placeholder message
-      // In production, integrate with Google Cloud Speech-to-Text API
-
-      // Example implementation:
-      // const audioBase64 = await convertAudioToBase64(audioUri);
-      // const transcription = await transcribeAudio(audioBase64);
-      // await geminiClient.sendMessage(transcription);
-
-      // For now, send a placeholder for testing
-      const testMessage = 'I think this is an important topic worth discussing further.';
-      await geminiClient.sendMessage(testMessage);
-
-      // Update the user message to show transcription (or placeholder)
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === userMessage.id ? { ...msg, text: '🎤 ' + testMessage } : msg
-        )
-      );
+      // Convert audio to base64 and send for real transcription
+      const audioBase64 = await convertAudioToBase64(audioUri);
+      
+      // Send audio for real transcription and processing
+      await geminiClient.sendAudio(audioBase64);
 
       setIsProcessing(false);
     } catch (error) {
@@ -185,22 +186,6 @@ export default function Part3Screen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <LinearGradient
-        colors={Colors.primary.gradient}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      >
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#FFF" />
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>IELTS Speaking Part 3</Text>
-          <Text style={styles.headerSubtitle}>Two-way Discussion</Text>
-        </View>
-      </LinearGradient>
-
       {!sessionStarted ? (
         // Pre-session view
         <View style={styles.content}>
@@ -257,22 +242,19 @@ export default function Part3Screen() {
           </View>
 
           {/* Start Button */}
-          <TouchableOpacity style={styles.startButton} onPress={startSession} disabled={isProcessing}>
-            <LinearGradient
-              colors={Colors.secondary.gradient}
-              style={styles.startButtonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              {isProcessing ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <>
-                  <Ionicons name="play" size={24} color="#FFF" style={{ marginRight: 8 }} />
-                  <Text style={styles.startButtonText}>Start Discussion</Text>
-                </>
-              )}
-            </LinearGradient>
+          <TouchableOpacity 
+            style={[styles.startButton, isProcessing && styles.startButtonDisabled]} 
+            onPress={startSession} 
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <>
+                <Ionicons name="play" size={24} color="#FFF" style={{ marginRight: 8 }} />
+                <Text style={styles.startButtonText}>Bắt đầu thảo luận</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
       ) : (
@@ -287,12 +269,23 @@ export default function Part3Screen() {
                 style={[styles.messageBubble, msg.role === 'user' ? styles.userMessage : styles.assistantMessage]}
               >
                 <Text style={[styles.messageText, msg.role === 'user' && styles.userMessageText]}>
-                  {msg.role === 'user' ? '🎤 You: ' : '🤖 AI: '}
+                  {msg.role === 'user' ? '🎤 You: ' : '🎙️ Examiner: '}
                   {msg.text}
                 </Text>
               </View>
             ))}
-            {isProcessing && <ActivityIndicator color={Colors.primary.main} style={{ marginTop: 10 }} />}
+            {isProcessing && (
+              <View style={styles.processingIndicator}>
+                <ActivityIndicator color={Colors.primary.main} />
+                <Text style={styles.processingText}>Processing speech...</Text>
+              </View>
+            )}
+            {isPlayingAudio && (
+              <View style={styles.processingIndicator}>
+                <ActivityIndicator color={Colors.secondary.main} />
+                <Text style={styles.processingText}>🔊 Examiner speaking...</Text>
+              </View>
+            )}
           </View>
 
           {/* Audio Recorder */}
@@ -323,31 +316,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f8fafc',
   },
-  header: {
-    padding: 16,
-    paddingTop: 12,
-    paddingBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    paddingRight: 16,
-  },
-  headerContent: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFF',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: 4,
-  },
   content: {
     padding: 16,
+    paddingTop: 20,
     paddingBottom: 32,
   },
   topicCard: {
@@ -455,15 +426,21 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   startButton: {
+    backgroundColor: Colors.secondary.main,
     borderRadius: 12,
-    overflow: 'hidden',
-  },
-  startButtonGradient: {
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  startButtonDisabled: {
+    opacity: 0.6,
   },
   startButtonText: {
     fontSize: 16,
@@ -535,5 +512,20 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#FFF',
     fontWeight: '600',
+  },
+  processingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 10,
+    padding: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    borderRadius: 8,
+  },
+  processingText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginLeft: 8,
+    fontStyle: 'italic',
   },
 });

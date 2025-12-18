@@ -1,263 +1,255 @@
-import { Colors } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    View
-} from 'react-native';
+    BodySmall,
+    Button,
+    Caption,
+    Card,
+    Container,
+    DesignTokens,
+    Heading3,
+    Heading4,
+    HStack,
+    VStack
+} from '@/components/design-system';
+import { useAuth } from '@/contexts/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Alert, Text, TouchableOpacity } from 'react-native';
 
-export default function ExploreScreen() {
-  const learningResources = [
-    {
-      icon: 'book-outline',
-      title: 'IELTS Speaking Topics',
-      description: 'Khám phá 100+ chủ đề phổ biến trong IELTS Speaking',
-      color: Colors.primary.main,
-    },
-    {
-      icon: 'bulb-outline',
-      title: 'Tips & Tricks',
-      description: 'Mẹo học tiếng Anh hiệu quả từ các chuyên gia',
-      color: Colors.secondary.main,
-    },
-    {
-      icon: 'trending-up-outline',
-      title: 'Progress Tracking',
-      description: 'Theo dõi tiến độ học tập và cải thiện kỹ năng',
-      color: Colors.accent.info,
-    },
-    {
-      icon: 'star-outline',
-      title: 'Achievements',
-      description: 'Mở khóa thành tích và nhận phần thưởng',
-      color: Colors.accent.success,
-    },
-  ];
+export default function AccountScreen() {
+  const { user, signOut } = useAuth();
+  const router = useRouter();
 
-  const statistics = [
-    { label: 'Users', value: '10,000+', icon: 'people' },
-    { label: 'Sessions', value: '50,000+', icon: 'mic' },
-    { label: 'Avg Score', value: '7.5', icon: 'trophy' },
-    { label: 'Topics', value: '100+', icon: 'library' },
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Học viên';
+  const email = user?.email || '';
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Đăng xuất',
+      'Bạn có chắc chắn muốn đăng xuất?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Đăng xuất',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/(auth)/login');
+            } catch (error) {
+              Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const accountSections = [
+    {
+      title: 'Thông tin tài khoản',
+      items: [
+        { icon: 'person-outline', label: 'Hồ sơ cá nhân', value: displayName, onPress: () => {} },
+        { icon: 'mail-outline', label: 'Email', value: email, onPress: () => {} },
+      ],
+    },
+    {
+      title: 'Học tập',
+      items: [
+        { icon: 'stats-chart-outline', label: 'Thống kê học tập', onPress: () => {} },
+        { icon: 'trophy-outline', label: 'Thành tích', onPress: () => {} },
+        { icon: 'bookmark-outline', label: 'Từ vựng đã lưu', onPress: () => router.push('/(tabs)/dictionary') },
+      ],
+    },
+    {
+      title: 'Ứng dụng',
+      items: [
+        { icon: 'settings-outline', label: 'Cài đặt', onPress: () => {} },
+        { icon: 'help-circle-outline', label: 'Trợ giúp & Hỗ trợ', onPress: () => {} },
+        { icon: 'information-circle-outline', label: 'Về ứng dụng', onPress: () => {} },
+      ],
+    },
   ];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <LinearGradient
-        colors={Colors.primary.gradient}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      >
-        <Ionicons name="compass" size={48} color="#FFF" />
-        <Text style={styles.headerTitle}>Khám phá</Text>
-        <Text style={styles.headerSubtitle}>Tài nguyên học IELTS Speaking</Text>
-      </LinearGradient>
+    <Container scrollable>
+      <VStack gap="lg" style={{ paddingTop: DesignTokens.spacing.xl }}>
+        {/* Header Section */}
+        <HStack justify="space-between" align="center">
+          <VStack gap="xs">
+            <Heading3>👤 Tài khoản</Heading3>
+            <Caption>Quản lý thông tin cá nhân</Caption>
+          </VStack>
+          <TouchableOpacity 
+            onPress={() => {/* Handle notifications */}}
+            accessibilityLabel="Notifications"
+          >
+            <Ionicons 
+              name="notifications-outline" 
+              size={24} 
+              color={DesignTokens.colors.neutral[600]} 
+            />
+          </TouchableOpacity>
+        </HStack>
 
-      {/* Statistics Grid */}
-      <View style={styles.statsContainer}>
-        {statistics.map((stat, index) => (
-          <View key={index} style={styles.statCard}>
-            <Ionicons name={stat.icon as any} size={28} color={Colors.primary.main} />
-            <Text style={styles.statValue}>{stat.value}</Text>
-            <Text style={styles.statLabel}>{stat.label}</Text>
-          </View>
+        {/* Profile Card */}
+        <Card variant="gradient" padding="lg">
+          <VStack gap="md" align="center">
+            <VStack 
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: DesignTokens.radius.full,
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <Ionicons name="person" size={40} color={DesignTokens.colors.neutral[0]} />
+            </VStack>
+            
+            <VStack gap="xs" align="center">
+              <Heading3 color={DesignTokens.colors.neutral[0]}>
+                {displayName}
+              </Heading3>
+              <Caption color={DesignTokens.colors.neutral[100]}>
+                {email}
+              </Caption>
+            </VStack>
+
+            <HStack gap="lg" style={{ marginTop: DesignTokens.spacing.sm }}>
+              <VStack align="center" gap="xs">
+                <Heading4 color={DesignTokens.colors.neutral[0]}>0</Heading4>
+                <Caption color={DesignTokens.colors.neutral[200]} style={{ fontSize: 11 }}>
+                  Bài học
+                </Caption>
+              </VStack>
+              <VStack align="center" gap="xs">
+                <Heading4 color={DesignTokens.colors.neutral[0]}>0</Heading4>
+                <Caption color={DesignTokens.colors.neutral[200]} style={{ fontSize: 11 }}>
+                  Từ vựng
+                </Caption>
+              </VStack>
+              <VStack align="center" gap="xs">
+                <Heading4 color={DesignTokens.colors.neutral[0]}>0</Heading4>
+                <Caption color={DesignTokens.colors.neutral[200]} style={{ fontSize: 11 }}>
+                  Thành tích
+                </Caption>
+              </VStack>
+            </HStack>
+          </VStack>
+        </Card>
+
+        {/* Account Sections */}
+        {accountSections.map((section, sectionIndex) => (
+          <VStack key={sectionIndex} gap="sm">
+            <Caption 
+              color={DesignTokens.colors.neutral[500]} 
+              weight="semibold"
+              style={{ paddingHorizontal: DesignTokens.spacing.xs }}
+            >
+              {section.title}
+            </Caption>
+            
+            <Card variant="default" padding="sm">
+              <VStack gap="xs">
+                {section.items.map((item, itemIndex) => (
+                  <React.Fragment key={itemIndex}>
+                    <TouchableOpacity
+                      onPress={item.onPress}
+                      style={{
+                        paddingVertical: DesignTokens.spacing.md,
+                        paddingHorizontal: DesignTokens.spacing.md,
+                      }}
+                    >
+                      <HStack justify="space-between" align="center">
+                        <HStack gap="md" align="center" style={{ flex: 1 }}>
+                          <VStack
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: DesignTokens.radius.md,
+                              backgroundColor: DesignTokens.colors.primary[50],
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}
+                          >
+                            <Ionicons 
+                              name={item.icon as any} 
+                              size={20} 
+                              color={DesignTokens.colors.primary[600]} 
+                            />
+                          </VStack>
+                          
+                          <VStack gap="xs" style={{ flex: 1 }}>
+                            <BodySmall 
+                              weight="medium" 
+                              color={DesignTokens.colors.neutral[800]}
+                            >
+                              {item.label}
+                            </BodySmall>
+                            {'value' in item && item.value && (
+                              <Caption color={DesignTokens.colors.neutral[500]}>
+                                {item.value}
+                              </Caption>
+                            )}
+                          </VStack>
+                        </HStack>
+                        
+                        <Ionicons 
+                          name="chevron-forward" 
+                          size={20} 
+                          color={DesignTokens.colors.neutral[400]} 
+                        />
+                      </HStack>
+                    </TouchableOpacity>
+                    
+                    {itemIndex < section.items.length - 1 && (
+                      <VStack 
+                        style={{
+                          height: 1,
+                          backgroundColor: DesignTokens.colors.neutral[200],
+                          marginHorizontal: DesignTokens.spacing.md,
+                        }}
+                      >
+                        {null}
+                      </VStack>
+                    )}
+                  </React.Fragment>
+                ))}
+              </VStack>
+            </Card>
+          </VStack>
         ))}
-      </View>
 
-      {/* Resources Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Tài nguyên học tập</Text>
-        
-        {learningResources.map((resource, index) => (
-          <View key={index} style={styles.resourceCard}>
-            <View style={[styles.resourceIcon, { backgroundColor: `${resource.color}15` }]}>
-              <Ionicons name={resource.icon as any} size={28} color={resource.color} />
-            </View>
-            <View style={styles.resourceContent}>
-              <Text style={styles.resourceTitle}>{resource.title}</Text>
-              <Text style={styles.resourceDescription}>{resource.description}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.neutral.textMuted} />
-          </View>
-        ))}
-      </View>
-
-      {/* About Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Về Lingua Talk</Text>
-        <View style={styles.aboutCard}>
-          <Text style={styles.aboutText}>
-            Lingua Talk là ứng dụng luyện thi IELTS Speaking với công nghệ AI tiên tiến, 
-            giúp bạn cải thiện kỹ năng nói tiếng Anh một cách hiệu quả và tự tin.
+        {/* Sign Out Button */}
+        <Button
+          variant="secondary"
+          size="lg"
+          onPress={handleSignOut}
+          leftIcon="log-out-outline"
+          style={{
+            borderColor: DesignTokens.colors.error,
+            borderWidth: 1,
+          }}
+        >
+          <Text style={{ color: DesignTokens.colors.error, fontWeight: '600' }}>
+            Đăng xuất
           </Text>
-          <View style={styles.featureList}>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color={Colors.accent.success} />
-              <Text style={styles.featureText}>Chấm điểm tự động bằng AI</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color={Colors.accent.success} />
-              <Text style={styles.featureText}>Phản hồi chi tiết từng câu trả lời</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color={Colors.accent.success} />
-              <Text style={styles.featureText}>100+ chủ đề IELTS thực tế</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color={Colors.accent.success} />
-              <Text style={styles.featureText}>Luyện tập mọi lúc, mọi nơi</Text>
-            </View>
-          </View>
-        </View>
-      </View>
+        </Button>
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Version 1.0.0</Text>
-        <Text style={styles.footerText}>Made with ❤️ for IELTS learners</Text>
-      </View>
-    </ScrollView>
+        {/* App Info */}
+        <Card variant="outlined" padding="md">
+          <VStack gap="xs" align="center">
+            <Caption color={DesignTokens.colors.neutral[500]}>
+              LinguaTalk - IELTS Speaking Practice
+            </Caption>
+            <Caption color={DesignTokens.colors.neutral[400]} style={{ fontSize: 11 }}>
+              Version 1.0.0
+            </Caption>
+          </VStack>
+        </Card>
+      </VStack>
+    </Container>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.neutral.bg,
-  },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 40,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginTop: 16,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginTop: 8,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 16,
-    marginTop: -20,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.primary.main,
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: Colors.neutral.textLight,
-    marginTop: 4,
-  },
-  section: {
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: Colors.neutral.text,
-    marginBottom: 16,
-  },
-  resourceCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  resourceIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resourceContent: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  resourceTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.neutral.text,
-    marginBottom: 4,
-  },
-  resourceDescription: {
-    fontSize: 14,
-    color: Colors.neutral.textLight,
-    lineHeight: 20,
-  },
-  aboutCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  aboutText: {
-    fontSize: 15,
-    color: Colors.neutral.text,
-    lineHeight: 24,
-    marginBottom: 20,
-  },
-  featureList: {
-    gap: 12,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  featureText: {
-    fontSize: 15,
-    color: Colors.neutral.text,
-  },
-  footer: {
-    padding: 20,
-    alignItems: 'center',
-    paddingBottom: 40,
-  },
-  footerText: {
-    fontSize: 14,
-    color: Colors.neutral.textMuted,
-    marginVertical: 4,
-  },
-});
