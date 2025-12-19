@@ -1,16 +1,14 @@
 import { testHistoryService } from '@/services/test-history-service';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert } from 'react-native';
-import { Button } from '../../../components/design-system';
-import { Container, HStack, VStack } from '../../../components/design-system/Layout';
-import { Heading3, Heading4 } from '../../../components/design-system/Typography';
+import { Alert, Text } from 'react-native';
+import { Button, Container, HStack, VStack, Heading3, Heading4 } from '@/components/design-system';
 import {
   DetailedFeedbackCard,
   OverallScoreCard,
   PronunciationAnalysisCard,
   ScoreBreakdownCard
-} from '../../../components/speaking';
+} from '@/components/speaking';
 
 interface Part2ResultData {
   transcript: string;
@@ -43,45 +41,35 @@ export default function Part2ResultsScreen() {
   const [hasSaved, setHasSaved] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [resultData, setResultData] = useState<Part2ResultData | null>(null);
 
-  // Parse the result data with error handling - NEVER return null after hooks
-  let resultData: Part2ResultData | null = null;
-  
-  try {
-    const assessmentString = params.assessmentData as string;
-    if (!assessmentString) {
-      throw new Error('No assessment data provided');
-    }
-    const parsedData = JSON.parse(assessmentString);
-    
-    // Validate required properties
-    if (!parsedData || typeof parsedData.overallBand !== 'number') {
-      throw new Error('Invalid assessment data structure');
-    }
-    
-    // Additional safety checks
-    if (!parsedData.content || !parsedData.pronunciation) {
-      throw new Error('Missing required data properties');
-    }
-    
-    resultData = parsedData;
-  } catch (error) {
-    console.error('Failed to parse assessment data:', error);
-    console.log('Assessment string:', params.assessmentData);
-    setHasError(true);
-    setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
-  }
-  
-  // Handle error case with proper JSX instead of early return
+  // Parse the result data with error handling
   React.useEffect(() => {
-    if (hasError) {
-      // Navigate back after component has mounted properly to avoid hooks issues
-      const timer = setTimeout(() => {
-        router.back();
-      }, 100);
-      return () => clearTimeout(timer);
+    try {
+      const assessmentString = params.assessmentData as string;
+      if (!assessmentString) {
+        throw new Error('No assessment data provided');
+      }
+      const parsedData = JSON.parse(assessmentString);
+      
+      // Validate required properties
+      if (!parsedData || typeof parsedData.overallBand !== 'number') {
+        throw new Error('Invalid assessment data structure');
+      }
+      
+      // Additional safety checks
+      if (!parsedData.content || !parsedData.pronunciation) {
+        throw new Error('Missing required data properties');
+      }
+      
+      setResultData(parsedData);
+    } catch (error) {
+      console.error('Failed to parse assessment data:', error);
+      console.log('Assessment string:', params.assessmentData);
+      setHasError(true);
+      setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
     }
-  }, [hasError]);
+  }, [params.assessmentData]);
 
   // Tự động lưu kết quả Part 2 khi component load
   React.useEffect(() => {
