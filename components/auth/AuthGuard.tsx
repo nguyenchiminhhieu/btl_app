@@ -9,6 +9,9 @@ interface AuthGuardProps {
 export function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading } = useAuth();
 
+  // Always call all hooks before any conditional returns
+  // This ensures hooks are called consistently on every render
+  
   // Hiển thị loading spinner khi đang kiểm tra auth state
   if (loading) {
     return (
@@ -18,10 +21,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // Không hiển thị gì nếu chưa đăng nhập
-  // Để index.tsx xử lý redirect
+  // Return empty view instead of null to maintain consistent component structure
+  // This prevents hooks errors in child components during navigation
   if (!user) {
-    return null;
+    return <View style={styles.emptyContainer} />;
   }
 
   return <>{children}</>;
@@ -33,5 +36,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
+  },
+  emptyContainer: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
 });

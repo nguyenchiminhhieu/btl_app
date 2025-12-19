@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
     ActivityIndicator,
@@ -156,32 +155,7 @@ const Button: React.FC<ButtonProps> = ({
     </View>
   );
 
-  const isGradient = variant === 'primary' || variant === 'accent';
-
-  if (isGradient && !disabled) {
-    const gradientColors = variant === 'primary' 
-      ? DesignTokens.colors.gradient.primary as [string, string]
-      : DesignTokens.colors.gradient.accent as [string, string];
-
-    return (
-      <TouchableOpacity
-        onPress={handlePress}
-        disabled={disabled || loading}
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}
-        style={[getButtonStyle(), style]}
-      >
-        <LinearGradient
-          colors={gradientColors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.gradientContainer}
-        >
-          {renderContent()}
-        </LinearGradient>
-      </TouchableOpacity>
-    );
-  }
+  // Use solid colors instead of gradient to avoid visual artifacts
 
   return (
     <TouchableOpacity
@@ -310,12 +284,7 @@ const styles = StyleSheet.create({
     marginLeft: DesignTokens.spacing.xs,
   },
   
-  gradientContainer: {
-    flex: 1,
-    borderRadius: DesignTokens.radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  // Removed gradientContainer - using solid colors now
 });
 
 export default Button;

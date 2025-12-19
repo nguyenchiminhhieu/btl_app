@@ -7,6 +7,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import type { Part3Topic } from './part3-types';
+import { supabase } from './supabase-config';
 
 /**
  * Create timeout AbortController (React Native compatible)
@@ -29,6 +30,7 @@ export class GeminiLiveClient {
   private chat: any = null;
   private onTextResponse: (text: string) => void = () => {};
   private onAudioResponse: (audioBase64: string) => void = () => {};
+  private onTranscriptResponse: (transcript: string, messageId?: string) => void = () => {};
   private onError: (error: string) => void = () => {};
   private speechToTextApiKey: string;
   private textToSpeechApiKey: string;
@@ -86,7 +88,7 @@ Please start by telling me your thoughts on this topic.`
       this.startTime = Date.now();
       this.conversationCount = 0;
       
-      // Convert to speech and send both text and audio
+      // Send text response and auto-play audio
       this.onTextResponse(firstMessage);
       await this.convertTextToSpeech(firstMessage);
     } catch (error) {
@@ -100,7 +102,7 @@ Please start by telling me your thoughts on this topic.`
   /**
    * Send audio data to Gemini (real speech-to-text transcription)
    */
-  async sendAudio(audioBase64: string): Promise<void> {
+  async sendAudio(audioBase64: string, messageId?: string): Promise<void> {
     try {
       if (!this.chat) {
         throw new Error('Chat not initialized');
@@ -112,11 +114,24 @@ Please start by telling me your thoughts on this topic.`
       const transcription = await this.transcribeAudio(audioBase64);
       
       if (!transcription || transcription.trim().length === 0) {
-        this.onError('Could not understand the audio. Please try speaking more clearly.');
+        // Fallback: Allow user to continue with text input or retry
+        const fallbackMessage = "I couldn't hear that clearly. Could you please try speaking again or rephrase your response?";
+        this.onTextResponse(fallbackMessage);
+        
+        // Update the user message to show transcription failed
+        if (messageId) {
+          this.onTranscriptResponse("❌ Audio not clear - please try again", messageId);
+        }
         return;
       }
 
       console.log('User said:', transcription);
+      
+      // Send final transcript back to UI to update the message (only once)
+      if (transcription && transcription.length > 0) {
+        this.onTranscriptResponse(transcription, messageId);
+      }
+      
       this.conversationCount++;
       
       // Check conversation time (max 5 minutes)
@@ -139,10 +154,8 @@ Please start by telling me your thoughts on this topic.`
       // Send text response immediately (for visual feedback)
       this.onTextResponse(message);
       
-      // Convert to speech in parallel (don't await - fire and forget for speed)
-      this.convertTextToSpeech(message).catch(error => {
-        console.warn('TTS failed but continuing:', error);
-      });
+      // Auto-play TTS for examiner response
+      await this.convertTextToSpeech(message);
       
     } catch (error) {
       console.error('Error processing audio:', error);
@@ -191,10 +204,24 @@ Please start by telling me your thoughts on this topic.`
   }
 
   /**
+   * Set callback for transcript responses
+   */
+  onTranscript(callback: (transcript: string, messageId?: string) => void): void {
+    this.onTranscriptResponse = callback;
+  }
+
+  /**
    * Set callback for errors
    */
   onErrorCallback(callback: (error: string) => void): void {
     this.onError = callback;
+  }
+
+  /**
+   * Play text as speech (on-demand TTS)
+   */
+  async playTextAsSpeech(text: string): Promise<void> {
+    await this.convertTextToSpeech(text);
   }
 
   /**
@@ -304,11 +331,13 @@ Please start by telling me your thoughts on this topic.`
         }
       }
 
-      // If all encodings failed
-      throw new Error('All audio encodings failed - could not transcribe audio');
+      // If all encodings failed - return empty string instead of throwing
+      console.warn('⚠️ All audio encodings failed - returning empty transcription');
+      return '';
     } catch (error) {
       console.error('Error in speech-to-text:', error);
-      throw error;
+      // Don't throw - return empty string to allow conversation to continue
+      return '';
     }
   }
 
@@ -341,7 +370,7 @@ Please start by telling me your thoughts on this topic.`
         },
       };
 
-      const timeoutController = createTimeoutController(2000); // 2s max for TTS
+      const timeoutController = createTimeoutController(15000); // 15s max for TTS
       
       const response = await fetch(url, {
         method: 'POST',
@@ -365,8 +394,12 @@ Please start by telling me your thoughts on this topic.`
         this.onAudioResponse(result.audioContent);
       }
     } catch (error) {
-      console.error('Error in text-to-speech:', error);
-      // Don't throw - TTS is optional
+      if (error.name === 'AbortError') {
+        console.warn('TTS request timed out - continuing without audio');
+      } else {
+        console.error('Error in text-to-speech:', error);
+      }
+      // Don't throw - TTS is optional, continue conversation without audio
     }
   }
 
@@ -388,6 +421,22 @@ export async function convertAudioToBase64(audioUri: string): Promise<string> {
   console.log('🔄 Converting audio to base64:', audioUri);
   
   try {
+    // Get file info first
+    const fileInfo = await FileSystem.getInfoAsync(audioUri);
+    console.log('📁 File info:', {
+      exists: fileInfo.exists,
+      size: fileInfo.size,
+      uri: fileInfo.uri
+    });
+    
+    if (!fileInfo.exists) {
+      throw new Error('Audio file does not exist');
+    }
+    
+    if (fileInfo.size < 1000) { // Less than 1KB
+      console.warn('⚠️ Audio file is very small, may be empty');
+    }
+    
     // Try legacy FileSystem first (most reliable for Expo)
     const audioData = await FileSystem.readAsStringAsync(audioUri, {
       encoding: 'base64',
@@ -494,69 +543,159 @@ export async function playAudioFromBase64(audioBase64: string): Promise<void> {
 }
 
 /**
- * Part 3 topics for display (hardcoded for simplicity)
+ * Get random Part 3 topic from database
  */
-export const PART3_TOPICS: Part3Topic[] = [
-  {
-    id: '1',
-    topic_name: 'Technology and Daily Life',
-    main_question: 'How has technology changed the way people communicate?',
-    sub_questions: [
-      'What are the advantages and disadvantages of social media?',
-      'Do you think video calls can replace face-to-face meetings?',
-      'How might technology change communication in the future?',
-    ],
-    difficulty: 'medium',
-  },
-  {
-    id: '2',
-    topic_name: 'Environmental Protection',
-    main_question: 'What do you think are the most important environmental issues today?',
-    sub_questions: [
-      'What role should governments play in protecting the environment?',
-      'How can ordinary people help protect the environment?',
-      'Do you think climate change is a bigger problem than pollution?',
-    ],
-    difficulty: 'medium',
-  },
-  {
-    id: '3',
-    topic_name: 'Work and Career',
-    main_question: 'What factors are most important when choosing a career?',
-    sub_questions: [
-      'Do you think it is important to enjoy your job?',
-      'How has work changed due to technology?',
-      'What skills will be most valuable in the future?',
-    ],
-    difficulty: 'medium',
-  },
-  {
-    id: '4',
-    topic_name: 'Education',
-    main_question: 'What is the purpose of education in modern society?',
-    sub_questions: [
-      'Should education focus more on practical skills or theoretical knowledge?',
-      'How do you think online learning will change education?',
-      'What qualities should a good teacher have?',
-    ],
-    difficulty: 'medium',
-  },
-  {
-    id: '5',
-    topic_name: 'Travel and Culture',
-    main_question: 'Why do you think people enjoy traveling?',
-    sub_questions: [
-      'What are the benefits of traveling to different countries?',
-      'How has technology affected the way people travel?',
-      'Do you think tourism can be harmful to local cultures?',
-    ],
-    difficulty: 'medium',
-  },
-];
+export async function getRandomPart3Topic(): Promise<Part3Topic> {
+  try {
+    // Get random topic with its discussion questions
+    const { data: topics, error: topicsError } = await supabase
+      .from('part3_topics')
+      .select(`
+        id,
+        topic_name,
+        main_question,
+        category,
+        difficulty_level,
+        part3_discussion_questions (
+          id,
+          question_text,
+          question_order,
+          question_type
+        )
+      `)
+      .order('id');
+
+    if (topicsError) {
+      console.error('Error fetching Part 3 topics:', topicsError);
+      throw topicsError;
+    }
+
+    if (!topics || topics.length === 0) {
+      throw new Error('No Part 3 topics found in database');
+    }
+
+    // Select random topic
+    const randomIndex = Math.floor(Math.random() * topics.length);
+    const selectedTopic = topics[randomIndex];
+
+    // Transform to match Part3Topic interface
+    const part3Topic: Part3Topic = {
+      id: selectedTopic.id,
+      topic_name: selectedTopic.topic_name,
+      main_question: selectedTopic.main_question,
+      sub_questions: selectedTopic.part3_discussion_questions
+        .sort((a, b) => a.question_order - b.question_order)
+        .map(q => q.question_text),
+      difficulty: selectedTopic.difficulty_level || 'medium',
+    };
+
+    console.log('Selected Part 3 topic:', part3Topic.topic_name);
+    return part3Topic;
+    
+  } catch (error) {
+    console.error('Error in getRandomPart3Topic:', error);
+    
+    // Fallback to a default topic if database fails
+    const fallbackTopic: Part3Topic = {
+      id: 'fallback-1',
+      topic_name: 'General Discussion',
+      main_question: 'What are your thoughts on this topic?',
+      sub_questions: [
+        'Can you elaborate on your opinion?',
+        'How do you think this affects society?',
+        'What changes do you expect in the future?',
+      ],
+      difficulty: 'medium',
+    };
+    
+    console.log('Using fallback topic due to database error');
+    return fallbackTopic;
+  }
+}
 
 /**
- * Get random topic
+ * Get all Part 3 topics from database
  */
-export function getRandomPart3Topic(): Part3Topic {
-  return PART3_TOPICS[Math.floor(Math.random() * PART3_TOPICS.length)];
+export async function getAllPart3Topics(): Promise<Part3Topic[]> {
+  try {
+    const { data: topics, error } = await supabase
+      .from('part3_topics')
+      .select(`
+        id,
+        topic_name,
+        main_question,
+        category,
+        difficulty_level,
+        part3_discussion_questions (
+          id,
+          question_text,
+          question_order,
+          question_type
+        )
+      `)
+      .order('topic_name');
+
+    if (error) {
+      console.error('Error fetching all Part 3 topics:', error);
+      throw error;
+    }
+
+    return topics.map(topic => ({
+      id: topic.id,
+      topic_name: topic.topic_name,
+      main_question: topic.main_question,
+      sub_questions: topic.part3_discussion_questions
+        .sort((a, b) => a.question_order - b.question_order)
+        .map(q => q.question_text),
+      difficulty: topic.difficulty_level || 'medium',
+    }));
+    
+  } catch (error) {
+    console.error('Error in getAllPart3Topics:', error);
+    return [];
+  }
+}
+
+/**
+ * Get Part 3 topic by ID
+ */
+export async function getPart3TopicById(id: string): Promise<Part3Topic | null> {
+  try {
+    const { data: topic, error } = await supabase
+      .from('part3_topics')
+      .select(`
+        id,
+        topic_name,
+        main_question,
+        category,
+        difficulty_level,
+        part3_discussion_questions (
+          id,
+          question_text,
+          question_order,
+          question_type
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching Part 3 topic by ID:', error);
+      return null;
+    }
+
+    return {
+      id: topic.id,
+      topic_name: topic.topic_name,
+      main_question: topic.main_question,
+      sub_questions: topic.part3_discussion_questions
+        .sort((a, b) => a.question_order - b.question_order)
+        .map(q => q.question_text),
+      difficulty: topic.difficulty_level || 'medium',
+    };
+    
+  } catch (error) {
+    console.error('Error in getPart3TopicById:', error);
+    return null;
+  }
 }

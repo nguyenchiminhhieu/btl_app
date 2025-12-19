@@ -1,10 +1,12 @@
 import { QuestionResult } from '@/components/speaking';
 import { Colors } from '@/constants/theme';
 import type { AssessmentResult, Part1Answer } from '@/services';
+import { testHistoryService } from '@/services/test-history-service';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+    Alert,
     ScrollView,
     StyleSheet,
     Text,
@@ -24,9 +26,12 @@ export default function Part1ResultsScreen() {
   
   const [singleResult, setSingleResult] = useState<SingleResultParams | null>(null);
   const [allResults, setAllResults] = useState<Part1Answer[] | null>(null);
+  const [sessionDetail, setSessionDetail] = useState<any | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasSaved, setHasSaved] = useState(false);
 
   useEffect(() => {
-    // Check if showing single question result or all results
+    // Check if showing single question result, all results, or session detail
     if (params.singleResult) {
       try {
         const data = JSON.parse(params.singleResult as string);
@@ -41,29 +46,17 @@ export default function Part1ResultsScreen() {
       } catch (error) {
         console.error('Error parsing results:', error);
       }
+    } else if (params.sessionDetail) {
+      try {
+        const data = JSON.parse(params.sessionDetail as string);
+        setSessionDetail(data);
+      } catch (error) {
+        console.error('Error parsing session detail:', error);
+      }
     }
-  }, [params.singleResult, params.results]);
+  }, [params.singleResult, params.results, params.sessionDetail]);
 
-  // If showing single question result
-  if (singleResult) {
-    return (
-      <View style={styles.container}>
-        <QuestionResult 
-          result={singleResult.result}
-          questionText={singleResult.questionText}
-          questionNumber={singleResult.questionNumber}
-        />
-        <View style={styles.singleResultActions}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.backButtonText}>← Quay lại</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
+  // Moved this to the render section to avoid hooks rule violation
 
   // Calculate statistics from all results
   const statistics = React.useMemo(() => {
@@ -100,18 +93,223 @@ export default function Part1ResultsScreen() {
     return Colors.accent.error;                         // Red <70%
   };
 
+  // Save test session to database
+  const saveTestSession = async () => {
+    if (!allResults || !statistics || hasSaved) return;
+
+    setIsSaving(true);
+    try {
+      const completedAnswers = allResults.filter(a => a.result);
+      const strengths = [];
+      const improvements = [];
+
+      // Analyze strengths and improvements
+      if (statistics.averageBand >= 7.0) {
+        strengths.push('Good fluency and coherence');
+      }
+      if (statistics.averagePronunciation >= 85) {
+        strengths.push('Clear pronunciation');
+      }
+      if (statistics.averageBand < 6.5) {
+        improvements.push('Work on grammar accuracy');
+      }
+      if (statistics.averagePronunciation < 80) {
+        improvements.push('Practice pronunciation');
+      }
+
+      // Calculate detailed scores (convert from band scores)
+      const overallScore = Math.round(statistics.averageBand * 10) / 10;
+      const pronunciationScore = Math.round((statistics.averagePronunciation / 10)) / 10;
+      
+      await testHistoryService.saveTestSession({
+        test_type: 1, // Part 1
+        topic_title: 'Part 1 - Personal Questions',
+        topic_category: 'personal',
+        duration_seconds: 300, // Assume 5 minutes for Part 1
+        overall_score: overallScore,
+        pronunciation_score: pronunciationScore,
+        fluency_score: overallScore * 0.9, // Estimate
+        grammar_score: overallScore * 1.1 > 9 ? 9 : overallScore * 1.1, // Estimate
+        vocabulary_score: overallScore, // Estimate
+        questions_count: statistics.totalCompleted,
+        questions_data: completedAnswers.map((answer, index) => ({
+          question_number: index + 1,
+          transcript: answer.result?.transcript,
+          band_score: answer.result?.overallBand,
+          pronunciation_score: answer.result?.pronunciation.overall,
+        })),
+        overall_feedback: statistics.averageBand >= 7.0 
+          ? 'Good performance in Part 1. You demonstrated good fluency and vocabulary.'
+          : 'Continue practicing to improve your speaking skills. Focus on clarity and grammar.',
+        strengths,
+        improvements,
+        detailed_feedback: {
+          pronunciation: statistics.averagePronunciation,
+          band_average: statistics.averageBand,
+          completed_questions: statistics.totalCompleted,
+          total_questions: statistics.totalQuestions,
+        },
+      });
+
+      setHasSaved(true);
+      Alert.alert('Đã lưu!', 'Kết quả của bạn đã được lưu vào lịch sử.');
+    } catch (error) {
+      console.error('Failed to save test session:', error);
+      Alert.alert('Lỗi', 'Không thể lưu kết quả. Vui lòng thử lại.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
-      <LinearGradient
-        colors={[Colors.primary.main, Colors.secondary.main]}
-        style={styles.header}
-      >
-        <Text style={styles.headerTitle}>Part 1 - Results Summary</Text>
-        <Text style={styles.headerSubtitle}>
-          Completed {statistics?.totalCompleted || 0}/{statistics?.totalQuestions || 9} questions
-        </Text>
-      </LinearGradient>
+      {/* If showing single question result */}
+      {singleResult ? (
+        <View style={styles.container}>
+          <QuestionResult 
+            result={singleResult.result}
+            questionText={singleResult.questionText}
+            questionNumber={singleResult.questionNumber}
+          />
+          <View style={styles.singleResultActions}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.backButtonText}>← Quay lại</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : sessionDetail ? (
+        // Session detail view
+        <View style={styles.container}>
+          <LinearGradient
+            colors={[Colors.primary.main, Colors.secondary.main]}
+            style={styles.header}
+          >
+            <View style={styles.headerContent}>
+              <Text style={styles.headerTitle}>Chi tiết kết quả</Text>
+              <Text style={styles.headerSubtitle}>
+                {sessionDetail.session.topic_title}
+              </Text>
+            </View>
+          </LinearGradient>
+
+          {/* Session info */}
+          <View style={styles.sessionInfoContainer}>
+            <Text style={styles.sessionInfoTitle}>Thông tin bài kiểm tra</Text>
+            <View style={styles.sessionInfoRow}>
+              <Text style={styles.sessionInfoLabel}>Loại:</Text>
+              <Text style={styles.sessionInfoValue}>
+                {sessionDetail.session.test_type === 1 ? 'Part 1' : 'Part 2'}
+              </Text>
+            </View>
+            <View style={styles.sessionInfoRow}>
+              <Text style={styles.sessionInfoLabel}>Thời gian:</Text>
+              <Text style={styles.sessionInfoValue}>
+                {Math.floor(sessionDetail.session.duration_seconds / 60)}:{String(sessionDetail.session.duration_seconds % 60).padStart(2, '0')}
+              </Text>
+            </View>
+            <View style={styles.sessionInfoRow}>
+              <Text style={styles.sessionInfoLabel}>Số câu hỏi:</Text>
+              <Text style={styles.sessionInfoValue}>
+                {sessionDetail.session.questions_count}
+              </Text>
+            </View>
+            <View style={styles.sessionInfoRow}>
+              <Text style={styles.sessionInfoLabel}>Hoàn thành:</Text>
+              <Text style={styles.sessionInfoValue}>
+                {new Date(sessionDetail.session.completed_at).toLocaleDateString('vi-VN', {
+                  year: 'numeric',
+                  month: 'long', 
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </Text>
+            </View>
+          </View>
+
+          {/* Overall score */}
+          <View style={styles.overallContainer}>
+            <View style={styles.scoreCard}>
+              <Text style={styles.scoreLabel}>Điểm tổng kết</Text>
+              <Text
+                style={[
+                  styles.scoreValue,
+                  { color: getBandColor(sessionDetail.session.overall_score || 0) },
+                ]}
+              >
+                {sessionDetail.session.overall_score?.toFixed(1) || 'N/A'}/9.0
+              </Text>
+            </View>
+          </View>
+
+          {/* Detailed scores */}
+          <View style={styles.detailedScoresContainer}>
+            <Text style={styles.detailedScoresTitle}>Chi tiết điểm số</Text>
+            
+            <View style={styles.scoreRow}>
+              <Text style={styles.scoreRowLabel}>🗣️ Phát âm</Text>
+              <Text style={[styles.scoreRowValue, { color: getBandColor(sessionDetail.session.pronunciation_score || 0) }]}>
+                {sessionDetail.session.pronunciation_score?.toFixed(1) || 'N/A'}/9.0
+              </Text>
+            </View>
+            
+            <View style={styles.scoreRow}>
+              <Text style={styles.scoreRowLabel}>💬 Lưu loát</Text>
+              <Text style={[styles.scoreRowValue, { color: getBandColor(sessionDetail.session.fluency_score || 0) }]}>
+                {sessionDetail.session.fluency_score?.toFixed(1) || 'N/A'}/9.0
+              </Text>
+            </View>
+            
+            <View style={styles.scoreRow}>
+              <Text style={styles.scoreRowLabel}>📝 Ngữ pháp</Text>
+              <Text style={[styles.scoreRowValue, { color: getBandColor(sessionDetail.session.grammar_score || 0) }]}>
+                {sessionDetail.session.grammar_score?.toFixed(1) || 'N/A'}/9.0
+              </Text>
+            </View>
+            
+            <View style={styles.scoreRow}>
+              <Text style={styles.scoreRowLabel}>📚 Từ vựng</Text>
+              <Text style={[styles.scoreRowValue, { color: getBandColor(sessionDetail.session.vocabulary_score || 0) }]}>
+                {sessionDetail.session.vocabulary_score?.toFixed(1) || 'N/A'}/9.0
+              </Text>
+            </View>
+          </View>
+
+          {/* Questions data if available */}
+          {sessionDetail.session.questions_data && sessionDetail.session.questions_data.length > 0 && (
+            <View style={styles.questionsContainer}>
+              <Text style={styles.questionsTitle}>Câu hỏi và trả lời</Text>
+              {sessionDetail.session.questions_data.map((questionData: any, index: number) => (
+                <View key={index} style={styles.questionItem}>
+                  <Text style={styles.questionText}>
+                    Câu {index + 1}: {questionData.question_text}
+                  </Text>
+                  {questionData.transcript && (
+                    <View style={styles.transcriptContainer}>
+                      <Text style={styles.transcriptLabel}>Phiên âm:</Text>
+                      <Text style={styles.transcriptText}>{questionData.transcript}</Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      ) : (
+        <>
+          {/* Header */}
+          <LinearGradient
+            colors={[Colors.primary.main, Colors.secondary.main]}
+            style={styles.header}
+          >
+            <Text style={styles.headerTitle}>Part 1 - Results Summary</Text>
+            <Text style={styles.headerSubtitle}>
+              Completed {statistics?.totalCompleted || 0}/{statistics?.totalQuestions || 9} questions
+            </Text>
+          </LinearGradient>
 
       {statistics && (
         <>
@@ -220,6 +418,25 @@ export default function Part1ResultsScreen() {
 
       {/* Actions */}
       <View style={styles.actionsContainer}>
+        {!hasSaved && (
+          <TouchableOpacity 
+            style={[styles.primaryButton, isSaving && styles.disabledButton]}
+            onPress={saveTestSession}
+            disabled={isSaving}
+          >
+            <Text style={styles.primaryButtonText}>
+              {isSaving ? 'Đang lưu...' : '💾 Lưu kết quả'}
+            </Text>
+          </TouchableOpacity>
+        )}
+        
+        <TouchableOpacity 
+          style={styles.secondaryButton}
+          onPress={() => router.push('/(tabs)/statistics' as any)}
+        >
+          <Text style={styles.secondaryButtonText}>📊 Xem thống kê</Text>
+        </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.primaryButton}
           onPress={() => router.replace('/(tabs)/speaking/part1' as any)}
@@ -239,6 +456,8 @@ export default function Part1ResultsScreen() {
           <Text style={styles.secondaryButtonText}>Về trang chủ</Text>
         </TouchableOpacity>
       </View>
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -441,6 +660,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  disabledButton: {
+    backgroundColor: '#ccc',
+    opacity: 0.7,
+  },
   secondaryButton: {
     backgroundColor: '#FFF',
     padding: 16,
@@ -455,6 +678,143 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   
+  // Session detail styles
+  headerWithBack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  headerBackButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 8,
+  },
+  headerBackText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  headerContent: {
+    flex: 1,
+  },
+  sessionInfoContainer: {
+    backgroundColor: '#FFF',
+    padding: 20,
+    margin: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sessionInfoTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
+  },
+  sessionInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  sessionInfoLabel: {
+    fontSize: 16,
+    color: '#666',
+  },
+  sessionInfoValue: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  detailedScoresContainer: {
+    backgroundColor: '#FFF',
+    padding: 20,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  detailedScoresTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  scoreRowLabel: {
+    fontSize: 16,
+    color: '#333',
+  },
+  scoreRowValue: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  questionsContainer: {
+    backgroundColor: '#FFF',
+    padding: 20,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  questionsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
+  },
+  questionItem: {
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  questionText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  transcriptContainer: {
+    backgroundColor: '#F8F9FA',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  transcriptLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 4,
+  },
+  transcriptText: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 20,
+  },
+
   // Loading & Error
   loadingContainer: {
     flex: 1,

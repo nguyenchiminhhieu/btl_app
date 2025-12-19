@@ -74,8 +74,29 @@ export default function RegisterScreen() {
       
       console.log('Registration successful'); // Debug log
       
-      // No need to navigate - the root index.tsx will handle navigation
-      // based on the auth state change
+      // Hiển thị thông báo thành công
+      Alert.alert(
+        'Đăng ký thành công! 🎉', 
+        'Tài khoản của bạn đã được tạo thành công. Đang chuyển đến trang chủ...', 
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Auto navigation sẽ xảy ra thông qua auth state change
+              // Nhưng chúng ta cũng có backup manual navigation
+              setTimeout(() => {
+                router.replace('/(tabs)' as any);
+              }, 500);
+            }
+          }
+        ]
+      );
+      
+      // Backup navigation nếu auth state change bị delay  
+      setTimeout(() => {
+        router.replace('/(tabs)' as any);
+      }, 2000);
+      
     } catch (error: any) {
       console.error('Registration error:', error); // Debug log
       let errorMessage = 'Đăng ký thất bại';

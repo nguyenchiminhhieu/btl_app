@@ -7,17 +7,16 @@ import { AudioRecorder } from '@/components/speaking/AudioRecorder';
 import { Colors } from '@/constants/theme';
 import { convertAudioToBase64, GeminiLiveClient, getRandomPart3Topic, playAudioFromBase64 } from '@/services/part3-service';
 import type { Part3Topic } from '@/services/part3-types';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 interface Message {
@@ -41,12 +40,29 @@ export default function Part3Screen() {
   // Initialize Part 3 session
   useEffect(() => {
     initializeSession();
+    
+    // Cleanup function
+    return () => {
+      if (geminiClient) {
+        geminiClient.close();
+      }
+    };
+  }, []);
+
+  // Reset state when component mounts (clear previous session)
+  useEffect(() => {
+    setMessages([]);
+    setSessionStarted(false);
+    setIsProcessing(false);
+    setIsPlayingAudio(false);
   }, []);
 
   const initializeSession = async () => {
     try {
-      // Get random topic
-      const randomTopic = getRandomPart3Topic();
+      setIsLoading(true);
+      
+      // Get random topic from database
+      const randomTopic = await getRandomPart3Topic();
       setTopic(randomTopic);
 
       // Initialize Gemini client with speech API
@@ -64,7 +80,14 @@ export default function Part3Screen() {
       setIsLoading(false);
     } catch (error) {
       console.error('Error initializing Part 3 session:', error);
-      Alert.alert('Error', 'Failed to initialize session');
+      setIsLoading(false);
+      
+      if (error instanceof Error && error.message.includes('No Part 3 topics found')) {
+        Alert.alert('Error', 'No topics available. Please check your internet connection and try again.');
+      } else {
+        Alert.alert('Error', 'Failed to load discussion topics. Please try again.');
+      }
+      
       router.back();
     }
   };
@@ -104,9 +127,29 @@ export default function Part3Screen() {
         setMessages((prev) => [...prev, message]);
       });
 
+      // Setup transcript callback to update user messages
+      geminiClient.onTranscript((transcript, messageId) => {
+        setMessages((prev) => 
+          prev.map((msg) => 
+            msg.id === messageId 
+              ? { ...msg, text: transcript }
+              : msg
+          )
+        );
+      });
+
       geminiClient.onErrorCallback((error) => {
         console.error('Gemini error:', error);
-        Alert.alert('Error', error);
+        // Show user-friendly error message instead of raw error
+        if (error.includes('transcribe')) {
+          Alert.alert(
+            'Audio Issue', 
+            'Unable to process your audio. This could be due to background noise or unclear speech. Please try speaking more clearly into the microphone.',
+            [{ text: 'OK', style: 'default' }]
+          );
+        } else {
+          Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+        }
       });
 
       setSessionStarted(true);
@@ -128,9 +171,10 @@ export default function Part3Screen() {
         throw new Error('Gemini client not initialized');
       }
 
-      // Add user message placeholder
+      // Add user message placeholder with unique ID for tracking
+      const messageId = `msg_${Date.now()}`;
       const userMessage: Message = {
-        id: `msg_${Date.now()}`,
+        id: messageId,
         role: 'user',
         text: '🎤 Transcribing your response...',
         timestamp: Date.now(),
@@ -140,8 +184,8 @@ export default function Part3Screen() {
       // Convert audio to base64 and send for real transcription
       const audioBase64 = await convertAudioToBase64(audioUri);
       
-      // Send audio for real transcription and processing
-      await geminiClient.sendAudio(audioBase64);
+      // Send audio for real transcription and processing with messageId
+      await geminiClient.sendAudio(audioBase64, messageId);
 
       setIsProcessing(false);
     } catch (error) {
@@ -151,11 +195,33 @@ export default function Part3Screen() {
     }
   };
 
+  const handleListenToMessage = async (text: string) => {
+    if (!geminiClient || isPlayingAudio) return;
+    
+    try {
+      setIsPlayingAudio(true);
+      await geminiClient.playTextAsSpeech(text);
+      setIsPlayingAudio(false);
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      setIsPlayingAudio(false);
+    }
+  };
+
   const endSession = () => {
     try {
       if (geminiClient) {
         geminiClient.close();
+        setGeminiClient(null);
       }
+      // Clear all state
+      setMessages([]);
+      setSessionStarted(false);
+      setIsProcessing(false);
+      setIsPlayingAudio(false);
+      setTopic(null);
+      
+      // Go back to previous screen
       // Just go back - no database saves
       router.back();
     } catch (error) {
@@ -192,20 +258,20 @@ export default function Part3Screen() {
           {/* Topic Info */}
           <View style={styles.topicCard}>
             <View style={styles.topicHeader}>
-              <Ionicons name="bulb" size={32} color={Colors.secondary.main} />
+              <Text style={styles.partLabel}>Part 3 • Discussion</Text>
               <Text style={styles.topicTitle}>{topic.topic_name}</Text>
             </View>
 
-            <Text style={styles.mainQuestion}>
-              <Text style={styles.label}>Main Question:</Text>
-              {'\n'}{topic.main_question}
-            </Text>
+            <View style={styles.mainQuestionContainer}>
+              <Text style={styles.mainQuestionLabel}>Let's discuss this topic:</Text>
+              <Text style={styles.mainQuestion}>{topic.main_question}</Text>
+            </View>
 
             <View style={styles.subQuestionsContainer}>
-              <Text style={styles.subQuestionsLabel}>Follow-up Questions:</Text>
+              <Text style={styles.subQuestionsLabel}>We might also explore:</Text>
               {topic.sub_questions.map((question, index) => (
                 <View key={index} style={styles.subQuestion}>
-                  <Text style={styles.questionNumber}>{index + 1}.</Text>
+                  <Text style={styles.questionBullet}>•</Text>
                   <Text style={styles.questionText}>{question}</Text>
                 </View>
               ))}
@@ -214,30 +280,19 @@ export default function Part3Screen() {
 
           {/* Instructions */}
           <View style={styles.instructionsCard}>
-            <Text style={styles.instructionsTitle}>How It Works</Text>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionBullet}>
-                <Text style={styles.bulletNumber}>1</Text>
-              </View>
-              <Text style={styles.instructionText}>Click "Start Discussion"</Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionBullet}>
-                <Text style={styles.bulletNumber}>2</Text>
-              </View>
-              <Text style={styles.instructionText}>Listen to the question</Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionBullet}>
-                <Text style={styles.bulletNumber}>3</Text>
-              </View>
-              <Text style={styles.instructionText}>Record your response</Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionBullet}>
-                <Text style={styles.bulletNumber}>4</Text>
-              </View>
-              <Text style={styles.instructionText}>Get AI response & continue</Text>
+            <Text style={styles.instructionsTitle}>Ready for a natural conversation?</Text>
+            <Text style={styles.instructionsDescription}>
+              This is a two-way discussion where you'll explore the topic in depth. 
+              The AI examiner will ask follow-up questions based on your responses, 
+              just like in a real IELTS Speaking test.
+            </Text>
+            
+            <View style={styles.tipsContainer}>
+              <Text style={styles.tipsTitle}>Tips for success:</Text>
+              <Text style={styles.tipText}>• Give detailed, well-developed answers</Text>
+              <Text style={styles.tipText}>• Express and justify your opinions</Text>
+              <Text style={styles.tipText}>• Use a range of vocabulary and structures</Text>
+              <Text style={styles.tipText}>• Speak naturally and conversationally</Text>
             </View>
           </View>
 
@@ -248,57 +303,80 @@ export default function Part3Screen() {
             disabled={isProcessing}
           >
             {isProcessing ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
               <>
-                <Ionicons name="play" size={24} color="#FFF" style={{ marginRight: 8 }} />
-                <Text style={styles.startButtonText}>Bắt đầu thảo luận</Text>
+                <ActivityIndicator color="#FFF" />
+                <Text style={[styles.startButtonText, { marginLeft: 8 }]}>Setting up...</Text>
               </>
+            ) : (
+              <Text style={styles.startButtonText}>Start Discussion</Text>
             )}
           </TouchableOpacity>
         </View>
       ) : (
         // During-session view
-        <View style={styles.content}>
+        <View style={styles.sessionContainer}>
           {/* Conversation Log */}
-          <View style={styles.conversationContainer}>
-            <Text style={styles.conversationTitle}>Conversation</Text>
-            {messages.map((msg) => (
-              <View
-                key={msg.id}
-                style={[styles.messageBubble, msg.role === 'user' ? styles.userMessage : styles.assistantMessage]}
-              >
-                <Text style={[styles.messageText, msg.role === 'user' && styles.userMessageText]}>
-                  {msg.role === 'user' ? '🎤 You: ' : '🎙️ Examiner: '}
-                  {msg.text}
-                </Text>
-              </View>
-            ))}
-            {isProcessing && (
-              <View style={styles.processingIndicator}>
-                <ActivityIndicator color={Colors.primary.main} />
-                <Text style={styles.processingText}>Processing speech...</Text>
-              </View>
-            )}
-            {isPlayingAudio && (
-              <View style={styles.processingIndicator}>
-                <ActivityIndicator color={Colors.secondary.main} />
-                <Text style={styles.processingText}>🔊 Examiner speaking...</Text>
-              </View>
-            )}
+          <View style={styles.conversationWrapper}>
+            <Text style={styles.conversationTitle}>Discussion in Progress</Text>
+            <ScrollView 
+              style={styles.conversationScrollView}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.conversationContent}
+            >
+              {messages.map((msg) => (
+                <View
+                  key={msg.id}
+                  style={[styles.messageBubble, msg.role === 'user' ? styles.userMessage : styles.assistantMessage]}
+                >
+                  <View style={styles.messageHeader}>
+                    <Text style={styles.messageRole}>
+                      {msg.role === 'user' ? 'You' : 'Examiner'}
+                    </Text>
+                    {msg.role === 'assistant' && (
+                      <TouchableOpacity 
+                        style={styles.listenButton}
+                        onPress={() => handleListenToMessage(msg.text)}
+                        disabled={isPlayingAudio}
+                      >
+                        <Text style={styles.listenButtonText}>
+                          {isPlayingAudio ? 'Playing...' : '🔊 Listen'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <Text style={[styles.messageText, msg.role === 'user' && styles.userMessageText]}>
+                    {msg.text}
+                  </Text>
+                </View>
+              ))}
+              {isProcessing && (
+                <View style={styles.processingIndicator}>
+                  <ActivityIndicator color={Colors.primary.main} />
+                  <Text style={styles.processingText}>Analyzing your response...</Text>
+                </View>
+              )}
+              {isPlayingAudio && (
+                <View style={styles.processingIndicator}>
+                  <ActivityIndicator color={Colors.secondary.main} />
+                  <Text style={styles.processingText}>Examiner is responding...</Text>
+                </View>
+              )}
+            </ScrollView>
           </View>
 
-          {/* Audio Recorder */}
-          <AudioRecorder
-            onRecordingComplete={handleRecordingComplete}
-            disabled={isProcessing}
-          />
+          {/* Controls Container */}
+          <View style={styles.controlsContainer}>
+            {/* Audio Recorder */}
+            <AudioRecorder
+              onRecordingComplete={handleRecordingComplete}
+              disabled={isProcessing}
+            />
 
-          {/* End Session Button */}
-          <TouchableOpacity style={styles.endButton} onPress={endSession} disabled={isProcessing}>
-            <Ionicons name="stop-circle" size={24} color="#FFF" style={{ marginRight: 8 }} />
-            <Text style={styles.endButtonText}>End Discussion</Text>
-          </TouchableOpacity>
+            {/* End Session Button */}
+            <TouchableOpacity style={styles.endButton} onPress={endSession} disabled={isProcessing}>
+              <Text style={styles.endButtonText}>Finish Discussion</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </ScrollView>
@@ -333,32 +411,43 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   topicHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  topicTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.primary.main,
-    marginLeft: 12,
-    flex: 1,
-  },
-  label: {
-    fontWeight: '600',
-    color: Colors.primary.main,
-  },
-  mainQuestion: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#374151',
     marginBottom: 16,
   },
+  partLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.secondary.main,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  topicTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.primary.main,
+    lineHeight: 26,
+  },
+  mainQuestionContainer: {
+    marginBottom: 16,
+  },
+  mainQuestionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.primary.main,
+    marginBottom: 8,
+  },
+  mainQuestion: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#374151',
+    fontWeight: '500',
+  },
   subQuestionsContainer: {
-    marginBottom: 0,
-    paddingLeft: 12,
-    borderLeftWidth: 2,
-    borderLeftColor: Colors.secondary.main,
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   subQuestionsLabel: {
     fontSize: 13,
@@ -368,13 +457,14 @@ const styles = StyleSheet.create({
   },
   subQuestion: {
     flexDirection: 'row',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: 6,
   },
-  questionNumber: {
+  questionBullet: {
     fontWeight: '600',
     color: Colors.secondary.main,
     marginRight: 8,
-    minWidth: 20,
+    marginTop: 2,
   },
   questionText: {
     fontSize: 13,
@@ -394,36 +484,35 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   instructionsTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: Colors.primary.main,
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  instructionItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+  instructionsDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#6b7280',
+    marginBottom: 16,
   },
-  instructionBullet: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.secondary.main,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+  tipsContainer: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.secondary.main,
   },
-  bulletNumber: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFF',
+  tipsTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.primary.main,
+    marginBottom: 8,
   },
-  instructionText: {
+  tipText: {
     fontSize: 13,
     color: '#6b7280',
-    flex: 1,
     lineHeight: 18,
-    paddingTop: 4,
+    marginBottom: 4,
   },
   startButton: {
     backgroundColor: Colors.secondary.main,
@@ -447,9 +536,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFF',
   },
-  conversationContainer: {
-    marginBottom: 24,
-    maxHeight: 400,
+  sessionContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  conversationWrapper: {
+    flex: 1,
+    marginBottom: 16,
+  },
+  conversationScrollView: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  conversationContent: {
+    paddingBottom: 20,
+  },
+  controlsContainer: {
+    paddingBottom: 20,
   },
   conversationTitle: {
     fontSize: 16,
@@ -458,22 +561,48 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   messageBubble: {
-    marginBottom: 12,
+    marginBottom: 16,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   userMessage: {
     backgroundColor: Colors.primary.main,
-    marginLeft: 32,
+    marginLeft: 20,
+    borderBottomRightRadius: 4,
   },
   assistantMessage: {
-    backgroundColor: '#e5e7eb',
-    marginRight: 32,
+    backgroundColor: '#f1f5f9',
+    marginRight: 20,
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  messageRole: {
+    fontSize: 11,
+    fontWeight: '600',
+    opacity: 0.8,
+  },
+  listenButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 12,
+  },
+  listenButtonText: {
+    fontSize: 10,
+    color: '#666',
+    fontWeight: '500',
   },
   messageText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#374151',
-    lineHeight: 18,
+    lineHeight: 20,
   },
   userMessageText: {
     color: '#FFF',

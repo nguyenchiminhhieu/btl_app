@@ -5,13 +5,13 @@ import { TouchableOpacity } from 'react-native';
 
 // Design system imports
 import {
-  Body,
-  Caption,
-  Card,
-  Container,
-  Heading3,
-  HStack,
-  VStack
+    Body,
+    Caption,
+    Card,
+    Container,
+    Heading3,
+    HStack,
+    VStack
 } from '@/components/design-system';
 import { DesignTokens } from '@/constants/design-tokens';
 
@@ -130,8 +130,8 @@ export default function SpeakingIndexScreen() {
             <Caption>Nâng cao kỹ năng Speaking của bạn</Caption>
           </VStack>
           <TouchableOpacity 
-            onPress={() => {/* Handle stats/history */}}
-            accessibilityLabel="Speaking Stats"
+            onPress={() => router.push('/(tabs)/statistics' as any)}
+            accessibilityLabel="View Statistics"
           >
             <Ionicons 
               name="stats-chart-outline" 

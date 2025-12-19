@@ -1,13 +1,15 @@
+import { testHistoryService } from '@/services/test-history-service';
 import { router, useLocalSearchParams } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
+import { Alert } from 'react-native';
 import { Button } from '../../../components/design-system';
 import { Container, HStack, VStack } from '../../../components/design-system/Layout';
 import { Heading3, Heading4 } from '../../../components/design-system/Typography';
 import {
-    DetailedFeedbackCard,
-    OverallScoreCard,
-    PronunciationAnalysisCard,
-    ScoreBreakdownCard
+  DetailedFeedbackCard,
+  OverallScoreCard,
+  PronunciationAnalysisCard,
+  ScoreBreakdownCard
 } from '../../../components/speaking';
 
 interface Part2ResultData {
@@ -37,9 +39,14 @@ interface Part2ResultData {
 
 export default function Part2ResultsScreen() {
   const params = useLocalSearchParams();
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasSaved, setHasSaved] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Parse the result data with error handling
-  let resultData: Part2ResultData;
+  // Parse the result data with error handling - NEVER return null after hooks
+  let resultData: Part2ResultData | null = null;
+  
   try {
     const assessmentString = params.assessmentData as string;
     if (!assessmentString) {
@@ -52,20 +59,36 @@ export default function Part2ResultsScreen() {
       throw new Error('Invalid assessment data structure');
     }
     
+    // Additional safety checks
+    if (!parsedData.content || !parsedData.pronunciation) {
+      throw new Error('Missing required data properties');
+    }
+    
     resultData = parsedData;
   } catch (error) {
     console.error('Failed to parse assessment data:', error);
     console.log('Assessment string:', params.assessmentData);
-    router.back();
-    return null;
+    setHasError(true);
+    setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
   }
   
-  // Additional safety checks
-  if (!resultData || !resultData.content || !resultData.pronunciation) {
-    console.error('Missing required data properties');
-    router.back();
-    return null;
-  }
+  // Handle error case with proper JSX instead of early return
+  React.useEffect(() => {
+    if (hasError) {
+      // Navigate back after component has mounted properly to avoid hooks issues
+      const timer = setTimeout(() => {
+        router.back();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [hasError]);
+
+  // Tự động lưu kết quả Part 2 khi component load
+  React.useEffect(() => {
+    if (resultData && !hasError && !hasSaved) {
+      saveTestSession();
+    }
+  }, [resultData, hasError, hasSaved]);
 
   const handleTryAgain = () => {
     router.push('/(tabs)/speaking/part2' as any);
@@ -75,24 +98,89 @@ export default function Part2ResultsScreen() {
     router.push('/(tabs)' as any);
   };
 
+  // Save test session to database
+  const saveTestSession = async () => {
+    if (hasSaved || !resultData) return;
+
+    setIsSaving(true);
+    try {
+      // Get topic info from params or use default
+      const topicTitle = (params.topicTitle as string) || 'Part 2 - Cue Card Task';
+      const topicCategory = (params.topicCategory as string) || 'general';
+      const duration = parseInt(params.duration as string) || 120; // 2 minutes default
+      
+      // Prepare strengths and improvements
+      const strengths = resultData.strengths || [];
+      const improvements = resultData.improvements || [];
+      
+      await testHistoryService.saveTestSession({
+        test_type: 2, // Part 2
+        topic_title: topicTitle,
+        topic_category: topicCategory,
+        duration_seconds: duration + 60, // Add preparation time
+        overall_score: resultData.overallBand,
+        pronunciation_score: resultData.content.pronunciation,
+        fluency_score: resultData.content.fluencyCoherence,
+        grammar_score: resultData.content.grammaticalRange,
+        vocabulary_score: resultData.content.lexicalResource,
+        questions_count: 1, // Part 2 has one long response
+        questions_data: [{
+          question_id: 'part2_main',
+          question_text: `Cue Card: ${topicTitle}`,
+          transcript: resultData.transcript,
+          content_analysis: resultData.content,
+          pronunciation_analysis: resultData.pronunciation,
+        }],
+        overall_feedback: resultData.feedback,
+        strengths,
+        improvements,
+        detailed_feedback: {
+          transcript: resultData.transcript,
+          content_analysis: resultData.content,
+          pronunciation_analysis: resultData.pronunciation,
+        },
+        speaking_metrics: {
+          transcript_length: resultData.transcript?.length || 0,
+          pronunciation_breakdown: resultData.pronunciation,
+          ielts_criteria_scores: {
+            fluency_coherence: resultData.content.fluencyCoherence,
+            lexical_resource: resultData.content.lexicalResource,
+            grammatical_range: resultData.content.grammaticalRange,
+            pronunciation: resultData.content.pronunciation,
+          },
+        },
+      });
+
+      setHasSaved(true);
+      Alert.alert('Đã lưu!', 'Kết quả của bạn đã được lưu vào lịch sử.');
+    } catch (error) {
+      console.error('Failed to save test session:', error);
+      Alert.alert('Lỗi', 'Không thể lưu kết quả. Vui lòng thử lại.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Show error state if data failed to load
+  if (hasError || !resultData) {
+    return (
+      <Container padding="lg" style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <VStack gap="lg" align="center">
+          <Heading3>Error Loading Results</Heading3>
+          <Button variant="primary" onPress={() => router.back()}>
+            Go Back
+          </Button>
+        </VStack>
+      </Container>
+    );
+  }
+
   return (
     <Container scrollable>
       <VStack gap="lg">
         {/* Header */}
-        <HStack justify="space-between" align="center">
-          <HStack gap="sm" align="center">
-            <Button
-              variant="ghost"
-              size="sm"
-              leftIcon="arrow-back"
-              onPress={() => router.back()}
-              accessibilityLabel="Go back"
-            >
-              Back
-            </Button>
-          </HStack>
-          <Heading3>Results</Heading3>
-          <VStack style={{ width: 80 }}><></></VStack>
+        <HStack justify="center" align="center">
+          <Heading3>Kết quả Part 2</Heading3>
         </HStack>
 
         {/* Overall Score */}
@@ -148,8 +236,30 @@ export default function Part2ResultsScreen() {
           improvements={resultData.improvements}
         />
 
+        {/* Auto-save indicator */}
+        {isSaving && (
+          <HStack justify="center" align="center" gap="sm" style={{ padding: 12, backgroundColor: '#f0f9ff', borderRadius: 8 }}>
+            <Text>💾 Đang tự động lưu kết quả...</Text>
+          </HStack>
+        )}
+        {hasSaved && (
+          <HStack justify="center" align="center" gap="sm" style={{ padding: 12, backgroundColor: '#f0fdf4', borderRadius: 8 }}>
+            <Text>✅ Kết quả đã được lưu tự động!</Text>
+          </HStack>
+        )}
+
         {/* Actions */}
         <VStack gap="sm">
+          <Button
+            variant="secondary"
+            size="lg"
+            onPress={() => router.push('/(tabs)/statistics' as any)}
+            leftIcon="stats-chart"
+            accessibilityLabel="View statistics"
+          >
+            📊 Xem thống kê
+          </Button>
+          
           <Button
             variant="accent"
             size="lg"

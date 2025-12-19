@@ -3,25 +3,25 @@ export { supabase } from './supabase-config';
 
 // Database services (Supabase)
 export {
-  DatabaseService, default as DatabaseServiceClass
+    DatabaseService, default as DatabaseServiceClass
 } from './supabase-database';
 
 // Authentication service (Supabase)
 export {
-  AuthService,
-  authService,
-  type User
+    AuthService,
+    authService,
+    type User
 } from './supabase-auth';
 
 // Application services (Supabase)
 export {
-  LessonService, lessonService, ProgressService, progressService,
-  // Service classes
-  UserService,
-  // Service instances
-  userService, UserVocabularyService, userVocabularyService, VocabularyService, vocabularyService, type Exercise, type Lesson,
-  // Types/Interfaces
-  type UserProfile, type UserProgress, type UserVocabulary, type Word
+    LessonService, ProgressService,
+    // Service classes
+    UserService, UserVocabularyService, VocabularyService, lessonService, progressService,
+    // Service instances
+    userService, userVocabularyService, vocabularyService, type Exercise, type Lesson,
+    // Types/Interfaces
+    type UserProfile, type UserProgress, type UserVocabulary, type Word
 } from './supabase-services';
 
 // Common types
@@ -29,15 +29,15 @@ export * from './types';
 
 // Dictionary Service
 export {
-  DictionaryService, dictionaryService
+    DictionaryService, dictionaryService
 } from './dictionary-service';
 export * from './dictionary-types';
 
 // IELTS Speaking Part 1 (Python Backend)
 export * from './part1-service';
 export {
-  type Part1Answer, type AssessmentResult as Part1AssessmentResult,
-  type ContentResult as Part1ContentResult, type Part1SessionData
+    type Part1Answer, type AssessmentResult as Part1AssessmentResult,
+    type ContentResult as Part1ContentResult, type Part1SessionData
 } from './part1-types';
 
 // IELTS Speaking Part 2 (Python Backend)
@@ -47,6 +47,11 @@ export * from './part2-types';
 // IELTS Speaking Part 3 (Gemini Live API)
 export * from './part3-service';
 export * from './part3-types';
+
+// Test History Service (Supabase)
+export {
+    testHistoryService, type ChartDataPoint, type SaveTestSessionData, type TestSession, type TestStatistics
+} from './test-history-service';
 
 // Utility functions
 export const dbUtils = {

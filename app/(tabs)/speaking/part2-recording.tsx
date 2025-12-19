@@ -6,13 +6,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function Part2RecordingScreen() {
@@ -52,7 +52,7 @@ export default function Part2RecordingScreen() {
   };
 
   const handleRecordingComplete = (uri: string) => {
-    console.log('✅ Recording completed:', uri);
+    console.log('Recording completed:', uri);
     setAudioUri(uri);
     setRecordingComplete(true);
   };
@@ -66,7 +66,7 @@ export default function Part2RecordingScreen() {
     setIsProcessing(true);
 
     try {
-      console.log('🎯 Starting Part 2 assessment...');
+      console.log('Starting Part 2 assessment...');
       
       const result = await part2Service.assessPart2Speaking({
         audioUri,
@@ -222,10 +222,23 @@ export default function Part2RecordingScreen() {
       <View style={styles.recordingContainer}>
         {isProcessing ? (
           <View style={styles.processingContainer}>
-            <ActivityIndicator size="large" color={Colors.primary.main} />
-            <Text style={styles.processingText}>
-              Analyzing your response...
+            <View style={styles.loadingWrapper}>
+              <ActivityIndicator size="large" color={Colors.primary.main} style={styles.spinner} />
+              <View style={styles.progressRing}>
+                <ActivityIndicator size={60} color={Colors.accent.info} />
+              </View>
+            </View>
+            <Text style={styles.processingTitle}>
+              🎯 Đang phân tích câu trả lời...
             </Text>
+            <Text style={styles.processingSubtext}>
+              AI đang đánh giá phát âm, từ vựng và ngữ pháp của bạn
+            </Text>
+            <View style={styles.loadingDots}>
+              <View style={[styles.dot, styles.dot1]} />
+              <View style={[styles.dot, styles.dot2]} />
+              <View style={[styles.dot, styles.dot3]} />
+            </View>
           </View>
         ) : (
           <AudioRecorder
@@ -463,18 +476,64 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 40,
     backgroundColor: '#FFF',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: 20,
+    shadowColor: Colors.primary.main,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    minHeight: 280,
+    justifyContent: 'center',
   },
-  processingText: {
-    marginTop: 16,
-    fontSize: 16,
+  loadingWrapper: {
+    position: 'relative',
+    width: 80,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  spinner: {
+    position: 'absolute',
+  },
+  progressRing: {
+    position: 'absolute',
+    opacity: 0.3,
+  },
+  processingTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.primary.main,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  processingSubtext: {
+    fontSize: 14,
     color: '#666',
     textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  loadingDots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.primary.main,
+    marginHorizontal: 4,
+  },
+  dot1: {
+    animationDelay: '0s',
+  },
+  dot2: {
+    animationDelay: '0.2s',
+  },
+  dot3: {
+    animationDelay: '0.4s',
   },
   actionButtons: {
     margin: 20,

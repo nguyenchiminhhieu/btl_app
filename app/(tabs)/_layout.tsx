@@ -49,6 +49,13 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="statistics"
+          options={{
+            title: 'Thống kê',
+            tabBarIcon: ({ color }) => <Ionicons size={24} name="analytics" color={color} />,
+          }}
+        />
+        <Tabs.Screen
           name="explore"
           options={{
             title: 'Tài khoản',

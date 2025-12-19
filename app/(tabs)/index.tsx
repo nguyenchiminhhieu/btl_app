@@ -52,16 +52,10 @@ export default function HomeScreen() {
   // Rotate quotes based on day of month to keep it fresh
   const currentQuote = motivationalQuotes[new Date().getDate() % motivationalQuotes.length];
 
-  // Mock goals data
-  const dailyGoals = [
-    { id: 1, text: 'Hoàn thành 3 bài tập', completed: true },
-    { id: 2, text: 'Học 20 từ vựng mới', completed: true },
-    { id: 3, text: 'Luyện nói 15 phút', completed: true },
-    { id: 4, text: 'Hoàn thành 2 bài kiểm tra', completed: false },
-    { id: 5, text: 'Xem 1 video học tập', completed: false },
-  ];
-
-  const completedGoals = dailyGoals.filter(goal => goal.completed).length;
+  // Today's date for personalized greeting
+  const today = new Date();
+  const timeOfDay = today.getHours() < 12 ? 'sáng' : today.getHours() < 18 ? 'chiều' : 'tối';
+  const todayString = `${timeOfDay} tốt lành`;
 
   return (
     <Container scrollable>
@@ -69,19 +63,9 @@ export default function HomeScreen() {
         {/* Header Section */}
         <HStack justify="space-between" align="center">
           <VStack gap="xs">
-            <Heading3>Xin chào, {displayName}!</Heading3>
-            <Caption>Sẵn sàng luyện tập hôm nay?</Caption>
+            <Heading3>Chúc {displayName} {todayString}!</Heading3>
+            <Caption>Sẵn sàng chinh phục IELTS Speaking hôm nay?</Caption>
           </VStack>
-          <TouchableOpacity 
-            onPress={() => {/* Handle settings */}}
-            accessibilityLabel="Settings"
-          >
-            <Ionicons 
-              name="settings-outline" 
-              size={24} 
-              color={DesignTokens.colors.neutral[600]} 
-            />
-          </TouchableOpacity>
         </HStack>
 
         {/* Motivational Quote Card */}
@@ -163,7 +147,7 @@ export default function HomeScreen() {
           </VStack>
         </Card>
 
-        {/* Daily Goals */}
+        {/* Quick Actions */}
         <Card 
           variant="default" 
           padding="lg"
@@ -176,58 +160,50 @@ export default function HomeScreen() {
           <VStack gap="lg">
             <HStack justify="space-between" align="center">
               <HStack gap="sm" align="center">
-                <Text style={{ fontSize: 28 }}>🎯</Text>
-                <Heading3 color={DesignTokens.colors.neutral[800]}>Mục tiêu hôm nay</Heading3>
+                <Text style={{ fontSize: 28 }}>⚡</Text>
+                <Heading3 color={DesignTokens.colors.neutral[800]}>Học ngay</Heading3>
               </HStack>
-              <VStack align="flex-end" gap="xs">
-                <Caption 
-                  color={DesignTokens.colors.primary[600]}
-                  style={{ fontWeight: '600' }}
-                >
-                  {completedGoals}/{dailyGoals.length} hoàn thành
-                </Caption>
-                <Caption color={DesignTokens.colors.neutral[500]}>
-                  {Math.round((completedGoals / dailyGoals.length) * 100)}%
-                </Caption>
-              </VStack>
+              <Caption 
+                color={DesignTokens.colors.primary[600]}
+                style={{ fontWeight: '600' }}
+              >
+                Bắt đầu thôi!
+              </Caption>
             </HStack>
             
-            <ProgressBar 
-              progress={(completedGoals / dailyGoals.length) * 100} 
-            />
-            
-            <VStack gap="sm">
-              {dailyGoals.map((goal) => (
-                <EnhancedGoalItem 
-                  key={goal.id}
-                  completed={goal.completed}
-                  text={goal.text}
-                />
-              ))}
+            <VStack gap="md">
+              <QuickActionItem
+                icon="mic-outline"
+                iconColor={DesignTokens.colors.primary[600]}
+                title="Luyện Speaking ngay"
+                description="Bắt đầu với Part 1"
+                onPress={() => router.push('/(tabs)/speaking')}
+              />
+              
+              <QuickActionItem
+                icon="stats-chart-outline" 
+                iconColor={DesignTokens.colors.accent[500]}
+                title="Xem tiến độ học tập"
+                description="Thống kê và biểu đồ"
+                onPress={() => router.push('/(tabs)/statistics')}
+              />
+              
+              <QuickActionItem
+                icon="book-outline"
+                iconColor={DesignTokens.colors.success}
+                title="Tra cứu từ vựng"
+                description="Từ điển và từ đã lưu"
+                onPress={() => router.push('/(tabs)/dictionary')}
+              />
+              
+              <QuickActionItem
+                icon="trophy-outline"
+                iconColor={DesignTokens.colors.warning}
+                title="Làm bài test thử"
+                description="Kiểm tra trình độ hiện tại"
+                onPress={() => router.push('/(tabs)/speaking/part2')}
+              />
             </VStack>
-            
-            {completedGoals === dailyGoals.length && (
-              <Card 
-                variant="success" 
-                padding="md"
-                style={{ marginTop: DesignTokens.spacing.sm }}
-              >
-                <HStack gap="sm" align="center">
-                  <Text style={{ fontSize: 24 }}>🎉</Text>
-                  <VStack gap="xs" style={{ flex: 1 }}>
-                    <BodySmall 
-                      weight="semibold"
-                      color={DesignTokens.colors.success}
-                    >
-                      Xuất sắc! Bạn đã hoàn thành tất cả mục tiêu!
-                    </BodySmall>
-                    <Caption color={DesignTokens.colors.neutral[600]}>
-                      Tiếp tục phát huy nhé! 💪
-                    </Caption>
-                  </VStack>
-                </HStack>
-              </Card>
-            )}
           </VStack>
         </Card>
 
@@ -361,104 +337,64 @@ const SpeakingPartButton: React.FC<{
   </TouchableOpacity>
 );
 
-const EnhancedGoalItem: React.FC<{ completed: boolean; text: string }> = ({
-  completed,
-  text,
-}) => (
-  <TouchableOpacity disabled>
-    <HStack 
-      gap="md" 
-      align="center"
-      style={{
-        paddingVertical: DesignTokens.spacing.sm,
-        paddingHorizontal: DesignTokens.spacing.md,
-        borderRadius: DesignTokens.radius.md,
-        backgroundColor: completed 
-          ? `${DesignTokens.colors.success}10` 
-          : DesignTokens.colors.neutral[0],
-        borderWidth: 1,
-        borderColor: completed 
-          ? DesignTokens.colors.success 
-          : DesignTokens.colors.neutral[200],
-      }}
-    >
-      <VStack
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: DesignTokens.radius.full,
-          backgroundColor: completed 
-            ? DesignTokens.colors.success 
-            : DesignTokens.colors.neutral[200],
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        {completed && (
-          <Ionicons
-            name="checkmark"
-            size={14}
-            color={DesignTokens.colors.neutral[0]}
-          />
-        )}
-      </VStack>
-      
-      <BodySmall
-        style={{
-          flex: 1,
-          textDecorationLine: completed ? 'line-through' : 'none',
-          color: completed 
-            ? DesignTokens.colors.neutral[500] 
-            : DesignTokens.colors.neutral[800],
-          fontWeight: completed ? '400' : '500',
-        }}
-      >
-        {text}
-      </BodySmall>
-      
-      {completed && (
-        <Text style={{ fontSize: 16 }}>✅</Text>
-      )}
-    </HStack>
-  </TouchableOpacity>
-);
 
-const ProgressBar: React.FC<{ progress: number }> = ({ progress }) => (
-  <VStack gap="xs">
+
+const QuickActionItem: React.FC<{
+  icon: string;
+  iconColor: string;
+  title: string;
+  description: string;
+  onPress: () => void;
+}> = ({ icon, iconColor, title, description, onPress }) => (
+  <TouchableOpacity onPress={onPress}>
     <VStack 
+      gap="md"
       style={{
-        height: 12,
-        backgroundColor: DesignTokens.colors.neutral[200],
-        borderRadius: DesignTokens.radius.full,
-        overflow: 'hidden',
-        shadowColor: DesignTokens.colors.neutral[400],
+        padding: DesignTokens.spacing.md,
+        borderRadius: DesignTokens.radius.md,
+        backgroundColor: DesignTokens.colors.neutral[0],
+        borderWidth: 1,
+        borderColor: DesignTokens.colors.neutral[200],
+        shadowColor: DesignTokens.colors.neutral[900],
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.05,
         shadowRadius: 2,
         elevation: 1,
       }}
     >
-      <VStack
-        style={{
-          height: '100%',
-          width: `${Math.max(0, Math.min(100, progress))}%`,
-          backgroundColor: progress === 100 
-            ? DesignTokens.colors.success 
-            : DesignTokens.colors.primary[600],
-          borderRadius: DesignTokens.radius.full,
-          shadowColor: progress === 100 
-            ? DesignTokens.colors.success 
-            : DesignTokens.colors.primary[600],
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
-          elevation: 2,
-        }}
-      >
-        <></>
-      </VStack>
+      <HStack justify="space-between" align="center">
+        <HStack gap="md" align="center" style={{ flex: 1 }}>
+          <VStack 
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: iconColor + '20',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons name={icon as any} size={20} color={iconColor} />
+          </VStack>
+          
+          <VStack gap="xs" style={{ flex: 1 }}>
+            <BodySmall weight="semibold" color={DesignTokens.colors.neutral[800]}>
+              {title}
+            </BodySmall>
+            <Caption color={DesignTokens.colors.neutral[600]}>
+              {description}
+            </Caption>
+          </VStack>
+        </HStack>
+        
+        <Ionicons 
+          name="chevron-forward" 
+          size={16} 
+          color={DesignTokens.colors.neutral[400]}
+        />
+      </HStack>
     </VStack>
-  </VStack>
+  </TouchableOpacity>
 );
 
 // No styles needed - using design system components

@@ -32,6 +32,64 @@ export default function Part1Screen() {
     loadTopics();
   }, []);
 
+  // Save single result to database immediately after scoring
+  const saveSingleResult = async (result: any, question: any, topic: any, questionNumber: number) => {
+    try {
+      // Import the service
+      const { testHistoryService } = await import('@/services/test-history-service');
+      
+      await testHistoryService.saveTestSession({
+        test_type: 1, // Part 1
+        topic_title: topic.topic_name,
+        topic_category: 'part1',
+        duration_seconds: 30, // Estimate 30s per question
+        overall_score: result.overallBand,
+        pronunciation_score: result.pronunciation.overall,
+        fluency_score: result.pronunciation.fluency || result.overallBand,
+        grammar_score: result.pronunciation.accuracy || result.overallBand,
+        vocabulary_score: result.overallBand,
+        questions_count: 1,
+        questions_data: [{
+          question_id: question.id,
+          question_text: question.question_text,
+          transcript: result.transcript || '',
+          content_analysis: result,
+          pronunciation_analysis: result.pronunciation,
+        }],
+        speaking_metrics: {
+          transcript_length: result.transcript?.length || 0,
+          pronunciation_breakdown: result.pronunciation,
+          ielts_criteria_scores: {
+            fluency_coherence: result.pronunciation.fluency || result.overallBand,
+            lexical_resource: result.overallBand,
+            grammatical_range: result.pronunciation.accuracy || result.overallBand,
+            pronunciation: result.pronunciation.overall,
+          },
+        },
+      });
+      
+      console.log(`✅ Saved Part 1 Question ${questionNumber} result to database`);
+    } catch (error) {
+      console.error('Failed to save Part 1 result:', error);
+      // Don't block the user flow with an alert, just log the error
+    }
+  };
+
+  // Helper functions called consistently to avoid hooks rule violations
+  const getCurrentQuestion = () => {
+    if (!sessionData) return null;
+    return sessionData.topics[currentTopicIndex].questions[currentQuestionIndex];
+  };
+
+  const getCurrentTopic = () => {
+    if (!sessionData) return null;
+    return sessionData.topics[currentTopicIndex];
+  };
+
+  const getOverallProgress = () => {
+    return currentTopicIndex * 3 + currentQuestionIndex + 1;
+  };
+
   const loadTopics = async () => {
     try {
       setIsLoading(true);
@@ -77,7 +135,7 @@ export default function Part1Screen() {
     };
     setAnswers(newAnswers);
 
-    Alert.alert('✅ Đã ghi âm', 'Nhấn "Chấm điểm" để xem kết quả hoặc tiếp tục câu hỏi tiếp theo.');
+    Alert.alert('✅ Đã ghi âm', 'Bây giờ hãy nhấn "Chấm điểm" để đánh giá câu trả lời của bạn. Bạn phải chấm điểm trước khi chuyển sang câu tiếp theo.');
   };
 
   const handleScoreQuestion = async () => {
@@ -127,6 +185,9 @@ export default function Part1Screen() {
       };
       setAnswers(newAnswers);
 
+      // Lưu kết quả ngay vào database
+      await saveSingleResult(result, currentQuestion, currentTopic, getOverallProgress());
+
       // Navigate to result screen
       router.push({
         pathname: '/(tabs)/speaking/part1-results' as any,
@@ -146,26 +207,21 @@ export default function Part1Screen() {
     }
   };
 
-  const getCurrentQuestion = () => {
-    if (!sessionData) return null;
-    return sessionData.topics[currentTopicIndex].questions[currentQuestionIndex];
-  };
-
-  const getCurrentTopic = () => {
-    if (!sessionData) return null;
-    return sessionData.topics[currentTopicIndex];
-  };
-
-  const getOverallProgress = () => {
-    return currentTopicIndex * 3 + currentQuestionIndex + 1;
-  };
+  // Functions moved to top to avoid hooks rule violations
 
   const handleNextQuestion = () => {
     const answerIndex = getOverallProgress() - 1;
-    const hasRecorded = answers[answerIndex]?.audioUri;
+    const currentAnswer = answers[answerIndex];
 
-    if (!hasRecorded) {
+    // Bắt buộc phải có ghi âm
+    if (!currentAnswer?.audioUri) {
       Alert.alert('Chưa hoàn thành', 'Vui lòng ghi âm câu trả lời trước khi tiếp tục.');
+      return;
+    }
+
+    // Bắt buộc phải chấm điểm trước khi next
+    if (!currentAnswer?.result) {
+      Alert.alert('Chưa chấm điểm', 'Vui lòng chấm điểm câu trả lời trước khi tiếp tục.');
       return;
     }
 
@@ -175,11 +231,21 @@ export default function Part1Screen() {
       setCurrentTopicIndex(currentTopicIndex + 1);
       setCurrentQuestionIndex(0);
     } else {
-      // Hoàn thành tất cả 9 câu - chuyển sang results với data
-      router.push({
-        pathname: '/(tabs)/speaking/part1-results' as any,
-        params: { results: JSON.stringify(answers) },
-      });
+      // Hoàn thành tất cả 9 câu - chuyển sang trang thống kê
+      Alert.alert(
+        '🎉 Hoàn thành!', 
+        'Bạn đã hoàn thành tất cả 9 câu hỏi Part 1. Xem kết quả trong phần Thống kê.',
+        [
+          {
+            text: 'Xem thống kê',
+            onPress: () => router.push('/(tabs)/statistics' as any)
+          },
+          {
+            text: 'Về trang chủ',
+            onPress: () => router.push('/(tabs)' as any)
+          }
+        ]
+      );
     }
   };
 
@@ -223,6 +289,7 @@ export default function Part1Screen() {
     );
   }
 
+  // Get current data for rendering
   const currentTopic = getCurrentTopic();
   const currentQuestion = getCurrentQuestion();
 
@@ -240,6 +307,17 @@ export default function Part1Screen() {
               { width: `${(getOverallProgress() / 9) * 100}%` },
             ]}
           />
+        </View>
+        
+        {/* Question Status */}
+        <View style={styles.questionStatusContainer}>
+          <Text style={styles.questionStatusText}>
+            Trạng thái: {
+              answers[getOverallProgress() - 1]?.result ? '✅ Đã chấm điểm' :
+              answers[getOverallProgress() - 1]?.audioUri ? '🎵 Đã ghi âm' :
+              '⏳ Chưa ghi âm'
+            }
+          </Text>
         </View>
       </View>
 
@@ -289,11 +367,17 @@ export default function Part1Screen() {
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[styles.nextButton, !answers[getOverallProgress() - 1]?.audioUri && styles.disabledButton]} 
+          style={[
+            styles.nextButton, 
+            !answers[getOverallProgress() - 1]?.result && styles.disabledButton
+          ]} 
           onPress={handleNextQuestion}
-          disabled={!answers[getOverallProgress() - 1]?.audioUri}
+          disabled={!answers[getOverallProgress() - 1]?.result}
         >
-          <Text style={styles.nextButtonText}>
+          <Text style={[
+            styles.nextButtonText,
+            !answers[getOverallProgress() - 1]?.result && styles.disabledButtonText
+          ]}>
             {getOverallProgress() < 9 ? 'Câu tiếp theo →' : 'Hoàn thành'}
           </Text>
         </TouchableOpacity>
@@ -437,6 +521,15 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#4CAF50',
   },
+  questionStatusContainer: {
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  questionStatusText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+  },
   topicContainer: {
     backgroundColor: '#FFF',
     padding: 16,
@@ -521,6 +614,9 @@ const styles = StyleSheet.create({
   disabledButton: {
     backgroundColor: '#CCC',
     opacity: 0.6,
+  },
+  disabledButtonText: {
+    color: '#999',
   },
   overviewContainer: {
     backgroundColor: '#FFF',

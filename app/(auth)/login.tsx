@@ -1,19 +1,19 @@
 import {
-    Button,
-    TextInput
+  Button,
+  TextInput
 } from '@/components/design-system';
 import {
-    Container,
-    Divider,
-    HStack,
-    Spacer,
-    VStack
+  Container,
+  Divider,
+  HStack,
+  Spacer,
+  VStack
 } from '@/components/design-system/Layout';
 import {
-    Body,
-    Caption,
-    Heading2,
-    Heading3
+  Body,
+  Caption,
+  Heading2,
+  Heading3
 } from '@/components/design-system/Typography';
 import { DesignTokens } from '@/constants/design-tokens';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,10 +21,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    TouchableOpacity
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableOpacity
 } from 'react-native';
 
 export default function LoginScreen() {
@@ -286,4 +286,3 @@ const FeatureItem: React.FC<{ icon: string; text: string }> = ({ icon, text }) =
   </VStack>
 );
 
-// No styles needed - using design system components

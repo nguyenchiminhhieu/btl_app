@@ -73,6 +73,12 @@ export default function SpeakingLayout() {
           title: 'Phần 3 - Thảo luận',
         }}
       />
+      <Stack.Screen
+        name="statistics"
+        options={{
+          title: 'Thống kê',
+        }}
+      />
     </Stack>
   );
 }
