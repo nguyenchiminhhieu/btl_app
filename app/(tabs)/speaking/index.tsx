@@ -116,7 +116,6 @@ function SpeakingPartCard({
     </TouchableOpacity>
   );
 }
-
 export default function SpeakingIndexScreen() {
   const router = useRouter();
 
